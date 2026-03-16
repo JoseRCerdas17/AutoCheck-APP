@@ -23,6 +23,7 @@ export default function LoginScreen({ navigation }) {
       const response = await api.post('/auth/login', { email, password });
       await AsyncStorage.setItem('token', response.data.access_token);
       await AsyncStorage.setItem('nombre', response.data.nombre);
+      await AsyncStorage.setItem('userId', response.data.userId.toString());
       navigation.replace('Home');
     } catch (error) {
       Alert.alert('Error', 'Credenciales inválidas');

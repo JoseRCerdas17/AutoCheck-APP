@@ -30,6 +30,6 @@ export class AuthService {
     if (!valid) throw new UnauthorizedException('Credenciales inválidas');
 
     const token = this.jwtService.sign({ sub: user.id, email: user.email });
-    return { access_token: token, nombre: user.nombre };
+return { access_token: token, nombre: user.nombre, userId: user.id };
   }
 }
