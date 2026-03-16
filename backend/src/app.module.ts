@@ -11,18 +11,11 @@ import { VehiclesModule } from './vehicles/vehicles.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({
-        type: 'mssql',
-        host: config.get('DB_HOST'),
-        port: +config.get('DB_PORT'),
-        database: config.get('DB_DATABASE'),
-        username: config.get('DB_USERNAME'),
-        password: config.get('DB_PASSWORD'),
+        type: 'postgres',
+        url: config.get('DATABASE_URL'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: false,
-        options: {
-          encrypt: false,
-          enableArithAbort: true,
-        },
+        synchronize: true,
+        ssl: config.get('NODE_ENV') === 'production' ? { rejectUnauthorized: false } : false,
       }),
       inject: [ConfigService],
     }),

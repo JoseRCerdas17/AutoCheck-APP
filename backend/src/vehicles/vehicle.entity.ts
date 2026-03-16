@@ -16,8 +16,8 @@ export class Vehicle {
   @Column()
   modelo: string;
 
-  @Column({ name: 'año' })
-  año: number;
+  @Column({ name: 'anio' })
+  anio: number;
 
   @Column()
   placa: string;

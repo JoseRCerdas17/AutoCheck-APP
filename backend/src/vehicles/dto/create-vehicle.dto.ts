@@ -8,7 +8,7 @@ export class CreateVehicleDto {
   modelo: string;
 
   @IsNumber()
-  año: number;
+  anio: number;
 
   @IsString()
   placa: string;
