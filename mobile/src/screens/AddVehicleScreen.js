@@ -27,7 +27,7 @@ export default function AddVehicleScreen({ navigation }) {
       await api.post(`/vehicles/${userId}`, {
         marca,
         modelo,
-        año: parseInt(año),
+        anio: parseInt(año),
         placa,
         combustible,
         kilometraje: parseInt(kilometraje),
