@@ -1,3 +1,4 @@
+import api from '../services/api';
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, TouchableOpacity,
@@ -15,9 +16,16 @@ export default function ProfileScreen({ navigation }) {
   useEffect(() => {
     const getData = async () => {
       const n = await AsyncStorage.getItem('nombre');
-      const e = await AsyncStorage.getItem('email');
+      const id = await AsyncStorage.getItem('userId');
       setNombre(n || '');
-      setEmail(e || '');
+      if (id) {
+        try {
+          const res = await api.get(`/users/profile/${id}`);
+          setEmail(res.data.email);
+        } catch (error) {
+          console.log('Error cargando perfil', error);
+        }
+      }
     };
     getData();
   }, []);
