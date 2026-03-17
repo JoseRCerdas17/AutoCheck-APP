@@ -5,11 +5,13 @@ import {
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 
 export default function HomeScreen({ navigation }) {
   const [nombre, setNombre] = useState('');
   const [vehiculos, setVehiculos] = useState([]);
+  const { theme } = useTheme();
 
   useEffect(() => {
     const getData = async () => {
@@ -28,103 +30,96 @@ export default function HomeScreen({ navigation }) {
     getData();
   }, []);
 
-  const handleLogout = async () => {
-    await AsyncStorage.removeItem('token');
-    await AsyncStorage.removeItem('nombre');
-    await AsyncStorage.removeItem('userId');
-    navigation.replace('Login');
-  };
-
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
 
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Hola, {nombre} 👋</Text>
-            <Text style={styles.subGreeting}>Bienvenido a AutoCheck</Text>
+            <Text style={[styles.greeting, { color: theme.text }]}>Hola, {nombre} 👋</Text>
+            <Text style={[styles.subGreeting, { color: theme.textSecondary }]}>Bienvenido a AutoCheck</Text>
           </View>
-          <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
-            <Ionicons name="log-out-outline" size={24} color="#A0A0B0" />
+          <TouchableOpacity onPress={() => navigation.navigate('Profile')} style={styles.profileBtn}>
+            <Ionicons name="person-circle-outline" size={32} color={theme.textSecondary} />
           </TouchableOpacity>
         </View>
 
         {/* Mis Vehículos */}
-        <Text style={styles.sectionTitle}>Mis Vehículos</Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Mis Vehículos</Text>
         {vehiculos.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <MaterialIcons name="directions-car" size={40} color="#A0A0B0" />
-            <Text style={styles.emptyText}>No tenés vehículos registrados</Text>
-            <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('AddVehicle')}>
+          <View style={[styles.emptyCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <MaterialIcons name="directions-car" size={40} color={theme.textSecondary} />
+            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No tenés vehículos registrados</Text>
+            <TouchableOpacity style={[styles.addButton, { backgroundColor: theme.primary }]} onPress={() => navigation.navigate('AddVehicle')}>
               <Text style={styles.addButtonText}>+ Agregar vehículo</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {vehiculos.map((v) => (
-              <View key={v.id} style={styles.vehicleCard}>
-                <MaterialIcons name="directions-car" size={40} color="#5B2EE8" />
-                <Text style={styles.vehicleName}>{v.marca} {v.modelo}</Text>
-                <Text style={styles.vehicleDetail}>{v.año} • {v.placa}</Text>
-                <Text style={styles.vehicleKm}>{v.kilometraje} km</Text>
+              <View key={v.id} style={[styles.vehicleCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                <MaterialIcons name="directions-car" size={40} color={theme.primary} />
+                <Text style={[styles.vehicleName, { color: theme.text }]}>{v.marca} {v.modelo}</Text>
+                <Text style={[styles.vehicleDetail, { color: theme.textSecondary }]}>{v.anio} • {v.placa}</Text>
+                <Text style={[styles.vehicleKm, { color: theme.accent }]}>{v.kilometraje} km</Text>
               </View>
             ))}
           </ScrollView>
         )}
 
         {/* Próximos Mantenimientos */}
-        <Text style={styles.sectionTitle}>Próximos Mantenimientos</Text>
-        <View style={styles.card}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Próximos Mantenimientos</Text>
+        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <View style={styles.maintenanceItem}>
             <View>
-              <Text style={styles.maintenanceTitle}>Cambio de Aceite</Text>
-              <Text style={styles.maintenanceDate}>15 Julio 2024</Text>
+              <Text style={[styles.maintenanceTitle, { color: theme.text }]}>Cambio de Aceite</Text>
+              <Text style={[styles.maintenanceDate, { color: theme.textSecondary }]}>15 Julio 2024</Text>
             </View>
-            <View style={[styles.badge, { backgroundColor: '#2A2F3E' }]}>
-              <Text style={styles.badgeText}>Media</Text>
+            <View style={[styles.badge, { backgroundColor: theme.border }]}>
+              <Text style={[styles.badgeText, { color: theme.text }]}>Media</Text>
             </View>
           </View>
-          <View style={styles.separator} />
+          <View style={[styles.separator, { backgroundColor: theme.border }]} />
           <View style={styles.maintenanceItem}>
             <View>
-              <Text style={styles.maintenanceTitle}>Revisión de Frenos</Text>
-              <Text style={styles.maintenanceDate}>22 Julio 2024</Text>
+              <Text style={[styles.maintenanceTitle, { color: theme.text }]}>Revisión de Frenos</Text>
+              <Text style={[styles.maintenanceDate, { color: theme.textSecondary }]}>22 Julio 2024</Text>
             </View>
-            <View style={[styles.badge, { backgroundColor: '#5B2EE8' }]}>
-              <Text style={styles.badgeText}>Alta</Text>
+            <View style={[styles.badge, { backgroundColor: theme.primary }]}>
+              <Text style={[styles.badgeText, { color: '#fff' }]}>Alta</Text>
             </View>
           </View>
-          <View style={styles.separator} />
+          <View style={[styles.separator, { backgroundColor: theme.border }]} />
           <View style={styles.maintenanceItem}>
             <View>
-              <Text style={styles.maintenanceTitle}>Rotación de Neumáticos</Text>
-              <Text style={styles.maintenanceDate}>01 Agosto 2024</Text>
+              <Text style={[styles.maintenanceTitle, { color: theme.text }]}>Rotación de Neumáticos</Text>
+              <Text style={[styles.maintenanceDate, { color: theme.textSecondary }]}>01 Agosto 2024</Text>
             </View>
-            <View style={[styles.badge, { backgroundColor: '#2A2F3E' }]}>
-              <Text style={styles.badgeText}>Baja</Text>
+            <View style={[styles.badge, { backgroundColor: theme.border }]}>
+              <Text style={[styles.badgeText, { color: theme.text }]}>Baja</Text>
             </View>
           </View>
         </View>
 
         {/* Accesos Rápidos */}
-        <Text style={styles.sectionTitle}>Accesos Rápidos</Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Accesos Rápidos</Text>
         <View style={styles.quickAccessGrid}>
-          <TouchableOpacity style={styles.quickAccessItem} onPress={() => navigation.navigate('AddVehicle')}>
-            <MaterialIcons name="add-circle-outline" size={28} color="#5B2EE8" />
-            <Text style={styles.quickAccessText}>Registrar Vehículo</Text>
+          <TouchableOpacity style={[styles.quickAccessItem, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={() => navigation.navigate('AddVehicle')}>
+            <MaterialIcons name="add-circle-outline" size={28} color={theme.primary} />
+            <Text style={[styles.quickAccessText, { color: theme.text }]}>Registrar Vehículo</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.quickAccessItem}>
-            <MaterialIcons name="list-alt" size={28} color="#5B2EE8" />
-            <Text style={styles.quickAccessText}>Historial</Text>
+          <TouchableOpacity style={[styles.quickAccessItem, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <MaterialIcons name="list-alt" size={28} color={theme.primary} />
+            <Text style={[styles.quickAccessText, { color: theme.text }]}>Historial</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.quickAccessItem}>
-            <MaterialIcons name="description" size={28} color="#5B2EE8" />
-            <Text style={styles.quickAccessText}>Documentación</Text>
+          <TouchableOpacity style={[styles.quickAccessItem, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <MaterialIcons name="description" size={28} color={theme.primary} />
+            <Text style={[styles.quickAccessText, { color: theme.text }]}>Documentación</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.quickAccessItem}>
-            <MaterialIcons name="bar-chart" size={28} color="#5B2EE8" />
-            <Text style={styles.quickAccessText}>Reportes</Text>
+          <TouchableOpacity style={[styles.quickAccessItem, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <MaterialIcons name="bar-chart" size={28} color={theme.primary} />
+            <Text style={[styles.quickAccessText, { color: theme.text }]}>Reportes</Text>
           </TouchableOpacity>
         </View>
 
@@ -134,28 +129,28 @@ export default function HomeScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0D1117' },
+  container: { flex: 1 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 24, paddingTop: 60 },
-  greeting: { fontSize: 22, fontWeight: 'bold', color: '#FFFFFF' },
-  subGreeting: { fontSize: 13, color: '#A0A0B0', marginTop: 2 },
-  logoutBtn: { padding: 8 },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#FFFFFF', paddingHorizontal: 24, marginBottom: 12, marginTop: 8 },
-  emptyCard: { margin: 24, backgroundColor: '#1A1F2E', borderRadius: 16, padding: 32, alignItems: 'center', borderWidth: 1, borderColor: '#2A2F3E' },
-  emptyText: { color: '#A0A0B0', marginTop: 12, marginBottom: 16, fontSize: 14 },
-  addButton: { backgroundColor: '#5B2EE8', borderRadius: 10, paddingHorizontal: 24, paddingVertical: 12 },
+  greeting: { fontSize: 22, fontWeight: 'bold' },
+  subGreeting: { fontSize: 13, marginTop: 2 },
+  profileBtn: { padding: 8 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', paddingHorizontal: 24, marginBottom: 12, marginTop: 8 },
+  emptyCard: { margin: 24, borderRadius: 16, padding: 32, alignItems: 'center', borderWidth: 1 },
+  emptyText: { marginTop: 12, marginBottom: 16, fontSize: 14 },
+  addButton: { borderRadius: 10, paddingHorizontal: 24, paddingVertical: 12 },
   addButtonText: { color: '#fff', fontWeight: 'bold' },
-  vehicleCard: { backgroundColor: '#1A1F2E', borderRadius: 16, padding: 20, marginLeft: 24, marginRight: 8, marginBottom: 8, width: 200, borderWidth: 1, borderColor: '#2A2F3E' },
-  vehicleName: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold', marginTop: 8 },
-  vehicleDetail: { color: '#A0A0B0', fontSize: 13, marginTop: 4 },
-  vehicleKm: { color: '#29B6F6', fontSize: 13, marginTop: 4 },
-  card: { marginHorizontal: 24, backgroundColor: '#1A1F2E', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#2A2F3E', marginBottom: 8 },
+  vehicleCard: { borderRadius: 16, padding: 20, marginLeft: 24, marginRight: 8, marginBottom: 8, width: 200, borderWidth: 1 },
+  vehicleName: { fontSize: 16, fontWeight: 'bold', marginTop: 8 },
+  vehicleDetail: { fontSize: 13, marginTop: 4 },
+  vehicleKm: { fontSize: 13, marginTop: 4 },
+  card: { marginHorizontal: 24, borderRadius: 16, padding: 16, borderWidth: 1, marginBottom: 8 },
   maintenanceItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
-  maintenanceTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
-  maintenanceDate: { color: '#A0A0B0', fontSize: 12, marginTop: 2 },
+  maintenanceTitle: { fontSize: 14, fontWeight: '600' },
+  maintenanceDate: { fontSize: 12, marginTop: 2 },
   badge: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20 },
-  badgeText: { color: '#fff', fontSize: 12 },
-  separator: { height: 1, backgroundColor: '#2A2F3E' },
+  badgeText: { fontSize: 12 },
+  separator: { height: 1 },
   quickAccessGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, marginBottom: 32 },
-  quickAccessItem: { width: '46%', backgroundColor: '#1A1F2E', borderRadius: 16, padding: 20, margin: '2%', alignItems: 'center', borderWidth: 1, borderColor: '#2A2F3E' },
-  quickAccessText: { color: '#FFFFFF', fontSize: 13, marginTop: 8, textAlign: 'center' },
+  quickAccessItem: { width: '46%', borderRadius: 16, padding: 20, margin: '2%', alignItems: 'center', borderWidth: 1 },
+  quickAccessText: { fontSize: 13, marginTop: 8, textAlign: 'center' },
 });
