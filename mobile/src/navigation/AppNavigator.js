@@ -8,6 +8,7 @@ import HomeScreen from '../screens/HomeScreen';
 import AddVehicleScreen from '../screens/AddVehicleScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import MaintenanceScreen from '../screens/MaintenanceScreen';
 
 const Stack = createStackNavigator();
 
@@ -22,6 +23,7 @@ export default function AppNavigator() {
         <Stack.Screen name="AddVehicle" component={AddVehicleScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="Maintenance" component={MaintenanceScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

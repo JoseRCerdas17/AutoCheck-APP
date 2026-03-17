@@ -157,10 +157,10 @@ export default function HomeScreen({ navigation }) {
             <MaterialIcons name="add-circle-outline" size={28} color={theme.primary} />
             <Text style={[styles.quickAccessText, { color: theme.text }]}>Registrar Vehículo</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.quickAccessItem, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            <MaterialIcons name="list-alt" size={28} color={theme.primary} />
-            <Text style={[styles.quickAccessText, { color: theme.text }]}>Historial</Text>
-          </TouchableOpacity>
+          <TouchableOpacity style={[styles.quickAccessItem, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={() => navigation.navigate('Maintenance')}>
+  <MaterialIcons name="list-alt" size={28} color={theme.primary} />
+  <Text style={[styles.quickAccessText, { color: theme.text }]}>Historial</Text>
+</TouchableOpacity>
           <TouchableOpacity style={[styles.quickAccessItem, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <MaterialIcons name="description" size={28} color={theme.primary} />
             <Text style={[styles.quickAccessText, { color: theme.text }]}>Documentación</Text>
