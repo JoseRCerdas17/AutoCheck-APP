@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet
+  StyleSheet, Alert, Image
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
+import { getBrandImage } from '../theme/carBrands';
 import api from '../services/api';
 
 export default function HomeScreen({ navigation }) {
@@ -29,6 +30,28 @@ export default function HomeScreen({ navigation }) {
     };
     getData();
   }, []);
+
+  const handleDelete = async (id) => {
+    Alert.alert(
+      'Eliminar vehículo',
+      '¿Estás seguro que querés eliminar este vehículo?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.delete(`/vehicles/${id}`);
+              setVehiculos(vehiculos.filter(v => v.id !== id));
+            } catch (error) {
+              Alert.alert('Error', 'No se pudo eliminar el vehículo');
+            }
+          }
+        }
+      ]
+    );
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -59,10 +82,31 @@ export default function HomeScreen({ navigation }) {
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {vehiculos.map((v) => (
               <View key={v.id} style={[styles.vehicleCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                <MaterialIcons name="directions-car" size={40} color={theme.primary} />
+                {v.imagen ? (
+  <Image
+    source={{ uri: v.imagen }}
+    style={styles.brandLogo}
+    resizeMode="cover"
+  />
+) : getBrandImage(v.marca) ? (
+  <Image
+    source={{ uri: getBrandImage(v.marca) }}
+    style={styles.brandLogo}
+    resizeMode="contain"
+  />
+) : (
+  <MaterialIcons name="directions-car" size={40} color={theme.primary} />
+)}
                 <Text style={[styles.vehicleName, { color: theme.text }]}>{v.marca} {v.modelo}</Text>
                 <Text style={[styles.vehicleDetail, { color: theme.textSecondary }]}>{v.anio} • {v.placa}</Text>
                 <Text style={[styles.vehicleKm, { color: theme.accent }]}>{v.kilometraje} km</Text>
+                <TouchableOpacity
+                  style={[styles.deleteButton, { borderColor: theme.danger }]}
+                  onPress={() => handleDelete(v.id)}
+                >
+                  <Ionicons name="trash-outline" size={16} color={theme.danger} />
+                  <Text style={[styles.deleteText, { color: theme.danger }]}>Eliminar</Text>
+                </TouchableOpacity>
               </View>
             ))}
           </ScrollView>
@@ -139,10 +183,13 @@ const styles = StyleSheet.create({
   emptyText: { marginTop: 12, marginBottom: 16, fontSize: 14 },
   addButton: { borderRadius: 10, paddingHorizontal: 24, paddingVertical: 12 },
   addButtonText: { color: '#fff', fontWeight: 'bold' },
-  vehicleCard: { borderRadius: 16, padding: 20, marginLeft: 24, marginRight: 8, marginBottom: 8, width: 200, borderWidth: 1 },
-  vehicleName: { fontSize: 16, fontWeight: 'bold', marginTop: 8 },
+  vehicleCard: { borderRadius: 16, padding: 20, marginLeft: 24, marginRight: 8, marginBottom: 8, width: 220, borderWidth: 1 },
+  brandLogo: { width: 100, height: 60, marginBottom: 8 },
+  vehicleName: { fontSize: 16, fontWeight: 'bold', marginTop: 4 },
   vehicleDetail: { fontSize: 13, marginTop: 4 },
   vehicleKm: { fontSize: 13, marginTop: 4 },
+  deleteButton: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, marginTop: 12 },
+  deleteText: { fontSize: 13, marginLeft: 4 },
   card: { marginHorizontal: 24, borderRadius: 16, padding: 16, borderWidth: 1, marginBottom: 8 },
   maintenanceItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
   maintenanceTitle: { fontSize: 14, fontWeight: '600' },

@@ -27,4 +27,7 @@ export class Vehicle {
 
   @Column()
   kilometraje: number;
+
+  @Column({ nullable: true })
+  imagen: string;
 }
