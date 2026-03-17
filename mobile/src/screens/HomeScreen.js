@@ -28,8 +28,12 @@ export default function HomeScreen({ navigation }) {
         }
       }
     };
+
     getData();
-  }, []);
+
+    const unsubscribe = navigation.addListener('focus', getData);
+    return unsubscribe;
+  }, [navigation]);
 
   const handleDelete = async (id) => {
     Alert.alert(
