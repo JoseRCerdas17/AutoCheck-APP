@@ -6,10 +6,13 @@ import {
   TouchableOpacity,
   ScrollView
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "../services/api";
+import { useTheme } from "../context/ThemeContext";
 
 const VehiclesScreen = ({ navigation }) => {
   const [vehicles, setVehicles] = useState([]);
+  const { theme } = useTheme();
 
   useEffect(() => {
     fetchVehicles();
@@ -17,7 +20,12 @@ const VehiclesScreen = ({ navigation }) => {
 
   const fetchVehicles = async () => {
     try {
-      const response = await api.get("/vehicles");
+      // ✅ 1. Obtener userId
+      const id = await AsyncStorage.getItem("userId");
+
+      // ✅ 2. Endpoint corregido
+      const response = await api.get(`/vehicles/${id}`);
+
       console.log("DATA:", response.data);
       setVehicles(response.data || []);
     } catch (error) {
@@ -27,33 +35,44 @@ const VehiclesScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
 
       <ScrollView>
 
-        <Text style={styles.title}>Mis Vehículos</Text>
+        <Text style={[styles.title, { color: theme.text }]}>
+          Mis Vehículos
+        </Text>
 
         {/* 🔍 SI NO HAY VEHÍCULOS */}
         {vehicles.length === 0 && (
-          <Text style={styles.emptyText}>
+          <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
             No tienes vehículos registrados 🚗
           </Text>
         )}
 
-        {/* 🔍 LISTA MANUAL (SIN FlatList para evitar errores) */}
+        {/* 🔍 LISTA */}
         {vehicles.map((item, index) => (
-          <View key={index} style={styles.card}>
-            <Text style={styles.cardTitle}>
-              {item.brand} {item.model}
+          <View key={index} style={[styles.card, { backgroundColor: theme.card }]}>
+            
+            {/* ✅ 3. CAMPOS CORREGIDOS */}
+            <Text style={[styles.cardTitle, { color: theme.text }]}>
+              {item.marca} {item.modelo}
             </Text>
-            <Text>Año: {item.year}</Text>
-            <Text>Kilometraje: {item.mileage} km</Text>
+
+            <Text style={{ color: theme.textSecondary }}>
+              Año: {item.anio}
+            </Text>
+
+            <Text style={{ color: theme.textSecondary }}>
+              Kilometraje: {item.kilometraje} km
+            </Text>
+
           </View>
         ))}
 
         {/* ➕ BOTÓN */}
         <TouchableOpacity
-          style={styles.button}
+          style={[styles.button, { backgroundColor: theme.primary }]}
           onPress={() => navigation.navigate("AddVehicle")}
         >
           <Text style={styles.buttonText}>+ Agregar Vehículo</Text>
@@ -70,33 +89,27 @@ export default VehiclesScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#111",
     padding: 16
   },
   title: {
     fontSize: 22,
     fontWeight: "bold",
-    color: "#fff",
     marginBottom: 20
   },
   emptyText: {
     textAlign: "center",
-    marginTop: 50,
-    color: "#ccc"
+    marginTop: 50
   },
   card: {
-    backgroundColor: "#1e1e2f",
     padding: 15,
     borderRadius: 12,
     marginBottom: 10
   },
   cardTitle: {
     fontSize: 16,
-    fontWeight: "bold",
-    color: "#fff"
+    fontWeight: "bold"
   },
   button: {
-    backgroundColor: "#007bff",
     padding: 15,
     borderRadius: 10,
     alignItems: "center",
