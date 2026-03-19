@@ -1,122 +1,169 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView
-} from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import api from "../services/api";
-import { useTheme } from "../context/ThemeContext";
+  View, Text, StyleSheet, TouchableOpacity,
+  ScrollView, Image, Alert
+} from 'react-native';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '../context/ThemeContext';
+import { getBrandImage, getBrandColor } from '../theme/carBrands';
+import api from '../services/api';
 
-const VehiclesScreen = ({ navigation }) => {
+export default function VehiclesScreen({ navigation }) {
   const [vehicles, setVehicles] = useState([]);
   const { theme } = useTheme();
 
   useEffect(() => {
-    fetchVehicles();
-  }, []);
+    const unsubscribe = navigation.addListener('focus', fetchVehicles);
+    return unsubscribe;
+  }, [navigation]);
 
   const fetchVehicles = async () => {
     try {
-      // ✅ 1. Obtener userId
-      const id = await AsyncStorage.getItem("userId");
-
-      // ✅ 2. Endpoint corregido
+      const id = await AsyncStorage.getItem('userId');
       const response = await api.get(`/vehicles/${id}`);
-
-      console.log("DATA:", response.data);
       setVehicles(response.data || []);
     } catch (error) {
-      console.log("Error:", error);
+      console.log('Error:', error);
       setVehicles([]);
     }
+  };
+
+  const handleEliminar = (id, nombre) => {
+    Alert.alert(
+      'Eliminar vehículo',
+      `¿Estás seguro que querés eliminar ${nombre}?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.delete(`/vehicles/${id}`);
+              setVehicles(vehicles.filter(v => v.id !== id));
+            } catch (error) {
+              Alert.alert('Error', 'No se pudo eliminar el vehículo');
+            }
+          }
+        }
+      ]
+    );
   };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
 
-      <ScrollView>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={[styles.title, { color: theme.text }]}>Mis Vehículos</Text>
+        <TouchableOpacity
+          style={[styles.addBtn, { backgroundColor: theme.primary }]}
+          onPress={() => navigation.navigate('AddVehicle')}
+        >
+          <Ionicons name="add" size={22} color="#fff" />
+        </TouchableOpacity>
+      </View>
 
-        <Text style={[styles.title, { color: theme.text }]}>
-          Mis Vehículos
-        </Text>
+      <ScrollView showsVerticalScrollIndicator={false}>
 
-        {/* 🔍 SI NO HAY VEHÍCULOS */}
-        {vehicles.length === 0 && (
-          <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-            No tienes vehículos registrados 🚗
-          </Text>
+        {vehicles.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <MaterialIcons name="directions-car" size={64} color={theme.textSecondary} />
+            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+              No tenés vehículos registrados
+            </Text>
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: theme.primary }]}
+              onPress={() => navigation.navigate('AddVehicle')}
+            >
+              <Text style={styles.buttonText}>+ Agregar Vehículo</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          vehicles.map((item) => (
+            <View key={item.id} style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+
+              {/* Color de marca con inicial */}
+<View style={[styles.cardImageContainer, { backgroundColor: getBrandColor(item.marca) }]}>
+  {item.imagen ? (
+    <Image source={{ uri: item.imagen }} style={styles.cardImage} resizeMode="cover" />
+  ) : (
+    <Text style={styles.brandInitial}>
+      {item.marca ? item.marca.charAt(0).toUpperCase() : '?'}
+    </Text>
+  )}
+</View>
+
+              {/* Info */}
+              <View style={styles.cardInfo}>
+                <Text style={[styles.cardTitle, { color: theme.text }]}>
+                  {item.marca} {item.modelo}
+                </Text>
+                <Text style={[styles.cardSubtitle, { color: theme.textSecondary }]}>
+                  {item.anio} • {item.placa}
+                </Text>
+                <Text style={[styles.cardKm, { color: theme.accent }]}>
+                  {item.kilometraje} km
+                </Text>
+                <Text style={[styles.cardCombustible, { color: theme.textSecondary }]}>
+                  {item.combustible}
+                </Text>
+              </View>
+
+              {/* Botones */}
+              <View style={styles.cardButtons}>
+                <TouchableOpacity
+                  style={[styles.historialBtn, { borderColor: theme.primary }]}
+                  onPress={() => navigation.navigate('Historial', { vehiculoId: item.id })}
+                >
+                  <MaterialIcons name="list-alt" size={16} color={theme.primary} />
+                  <Text style={[styles.historialBtnText, { color: theme.primary }]}>Historial</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.deleteBtn, { borderColor: theme.danger }]}
+                  onPress={() => handleEliminar(item.id, `${item.marca} ${item.modelo}`)}
+                >
+                  <Ionicons name="trash-outline" size={16} color={theme.danger} />
+                </TouchableOpacity>
+              </View>
+
+            </View>
+          ))
         )}
 
-        {/* 🔍 LISTA */}
-        {vehicles.map((item, index) => (
-          <View key={index} style={[styles.card, { backgroundColor: theme.card }]}>
-            
-            {/* ✅ 3. CAMPOS CORREGIDOS */}
-            <Text style={[styles.cardTitle, { color: theme.text }]}>
-              {item.marca} {item.modelo}
-            </Text>
-
-            <Text style={{ color: theme.textSecondary }}>
-              Año: {item.anio}
-            </Text>
-
-            <Text style={{ color: theme.textSecondary }}>
-              Kilometraje: {item.kilometraje} km
-            </Text>
-
-          </View>
-        ))}
-
-        {/* ➕ BOTÓN */}
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: theme.primary }]}
-          onPress={() => navigation.navigate("AddVehicle")}
-        >
-          <Text style={styles.buttonText}>+ Agregar Vehículo</Text>
-        </TouchableOpacity>
-
+        <View style={{ height: 32 }} />
       </ScrollView>
-
     </View>
   );
-};
-
-export default VehiclesScreen;
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 20
-  },
-  emptyText: {
-    textAlign: "center",
-    marginTop: 50
-  },
-  card: {
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 10
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "bold"
-  },
-  button: {
-    padding: 15,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 20
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold"
-  }
+  container: { flex: 1 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingTop: 60, paddingBottom: 16 },
+  title: { fontSize: 24, fontWeight: 'bold' },
+  addBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 80, padding: 32 },
+  emptyText: { fontSize: 15, marginTop: 12, marginBottom: 24, textAlign: 'center' },
+  button: { borderRadius: 10, paddingHorizontal: 24, paddingVertical: 12 },
+  buttonText: { color: '#fff', fontWeight: 'bold' },
+  card: { marginHorizontal: 16, marginBottom: 16, borderRadius: 16, borderWidth: 1, overflow: 'hidden' },
+  cardImageContainer: { height: 140, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(128,128,128,0.05)' },
+  cardImage: { width: '100%', height: '100%' },
+  brandLogo: { width: 120, height: 70 },
+  cardInfo: { padding: 16 },
+  cardTitle: { fontSize: 18, fontWeight: 'bold' },
+  cardSubtitle: { fontSize: 14, marginTop: 4 },
+  cardKm: { fontSize: 14, marginTop: 4, fontWeight: '600' },
+  cardCombustible: { fontSize: 13, marginTop: 2 },
+  cardButtons: { flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 16, gap: 8 },
+  historialBtn: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8, flex: 1, justifyContent: 'center' },
+  historialBtnText: { fontSize: 13, fontWeight: '600', marginLeft: 4 },
+  deleteBtn: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8, justifyContent: 'center', alignItems: 'center' },
+  brandInitialContainer: { width: 70, height: 70, borderRadius: 35, justifyContent: 'center', alignItems: 'center' },
+brandInitial: { fontSize: 32, fontWeight: 'bold', color: '#fff' },
+cardImageContainer: { height: 140, justifyContent: 'center', alignItems: 'center' },
+cardImage: { width: '100%', height: '100%' },
+brandInitial: { fontSize: 64, fontWeight: 'bold', color: 'rgba(255,255,255,0.9)' },
 });
