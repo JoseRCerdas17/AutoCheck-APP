@@ -29,4 +29,11 @@ export class VehiclesService {
   async remove(id: number): Promise<void> {
     await this.repo.delete(id);
   }
+
+  async updateKilometraje(id: number, kilometraje: number): Promise<Vehicle> {
+  const vehicle = await this.repo.findOne({ where: { id } });
+  if (!vehicle) throw new Error('Vehículo no encontrado');
+  vehicle.kilometraje = kilometraje;
+  return this.repo.save(vehicle);
+}
 }

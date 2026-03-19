@@ -8,10 +8,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
 import { getBrandImage } from '../theme/carBrands';
 import api from '../services/api';
+import KilometrajeModal from './KilometrajeModal';
 
 export default function HomeScreen({ navigation }) {
   const [nombre, setNombre] = useState('');
   const [vehiculos, setVehiculos] = useState([]);
+  const [showKilometrajeModal, setShowKilometrajeModal] = useState(false);
   const { theme } = useTheme();
 
   useEffect(() => {
@@ -23,14 +25,22 @@ export default function HomeScreen({ navigation }) {
         try {
           const res = await api.get(`/vehicles/${id}`);
           setVehiculos(res.data);
+  
+          // Solo mostrar el modal una vez por día
+          const hoy = new Date().toDateString();
+          const ultimaVez = await AsyncStorage.getItem('ultimoModalKm');
+          if (res.data.length > 0 && ultimaVez !== hoy) {
+            setShowKilometrajeModal(true);
+            await AsyncStorage.setItem('ultimoModalKm', hoy);
+          }
         } catch (error) {
           console.log('Error cargando vehículos', error);
         }
       }
     };
-
+  
     getData();
-
+  
     const unsubscribe = navigation.addListener('focus', getData);
     return unsubscribe;
   }, [navigation]);
@@ -59,6 +69,13 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
+
+      <KilometrajeModal
+        visible={showKilometrajeModal}
+        vehiculos={vehiculos}
+        onClose={() => setShowKilometrajeModal(false)}
+      />
+
       <ScrollView showsVerticalScrollIndicator={false}>
 
         {/* Header */}
@@ -87,20 +104,20 @@ export default function HomeScreen({ navigation }) {
             {vehiculos.map((v) => (
               <View key={v.id} style={[styles.vehicleCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 {v.imagen ? (
-  <Image
-    source={{ uri: v.imagen }}
-    style={styles.brandLogo}
-    resizeMode="cover"
-  />
-) : getBrandImage(v.marca) ? (
-  <Image
-    source={{ uri: getBrandImage(v.marca) }}
-    style={styles.brandLogo}
-    resizeMode="contain"
-  />
-) : (
-  <MaterialIcons name="directions-car" size={40} color={theme.primary} />
-)}
+                  <Image
+                    source={{ uri: v.imagen }}
+                    style={styles.brandLogo}
+                    resizeMode="cover"
+                  />
+                ) : getBrandImage(v.marca) ? (
+                  <Image
+                    source={{ uri: getBrandImage(v.marca) }}
+                    style={styles.brandLogo}
+                    resizeMode="contain"
+                  />
+                ) : (
+                  <MaterialIcons name="directions-car" size={40} color={theme.primary} />
+                )}
                 <Text style={[styles.vehicleName, { color: theme.text }]}>{v.marca} {v.modelo}</Text>
                 <Text style={[styles.vehicleDetail, { color: theme.textSecondary }]}>{v.anio} • {v.placa}</Text>
                 <Text style={[styles.vehicleKm, { color: theme.accent }]}>{v.kilometraje} km</Text>
@@ -157,10 +174,10 @@ export default function HomeScreen({ navigation }) {
             <MaterialIcons name="add-circle-outline" size={28} color={theme.primary} />
             <Text style={[styles.quickAccessText, { color: theme.text }]}>Registrar Vehículo</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.quickAccessItem, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={() => navigation.navigate('Maintenance')}>
-  <MaterialIcons name="list-alt" size={28} color={theme.primary} />
-  <Text style={[styles.quickAccessText, { color: theme.text }]}>Historial</Text>
-</TouchableOpacity>
+          <TouchableOpacity style={[styles.quickAccessItem, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <MaterialIcons name="list-alt" size={28} color={theme.primary} />
+            <Text style={[styles.quickAccessText, { color: theme.text }]}>Historial</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={[styles.quickAccessItem, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <MaterialIcons name="description" size={28} color={theme.primary} />
             <Text style={[styles.quickAccessText, { color: theme.text }]}>Documentación</Text>

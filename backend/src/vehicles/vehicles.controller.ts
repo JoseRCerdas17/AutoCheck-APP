@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Put, Body, Param, UseGuards } from '@nestjs/common';
 import { VehiclesService } from './vehicles.service';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { JwtAuthGuard } from '../auth/jwt.guard';
@@ -22,4 +22,9 @@ export class VehiclesController {
   remove(@Param('id') id: string) {
     return this.vehiclesService.remove(+id);
   }
+
+  @Put(':id/kilometraje')
+updateKilometraje(@Param('id') id: string, @Body() body: { kilometraje: number }) {
+  return this.vehiclesService.updateKilometraje(+id, body.kilometraje);
+}
 }
