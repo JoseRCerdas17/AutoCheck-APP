@@ -8,7 +8,7 @@ export default function SplashScreen({ navigation }) {
       await new Promise(resolve => setTimeout(resolve, 2500));
       const token = await AsyncStorage.getItem('token');
       if (token) {
-        navigation.replace('Home');
+        navigation.replace('Main');
       } else {
         navigation.replace('Login');
       }

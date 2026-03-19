@@ -5,7 +5,6 @@ import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../screens/HomeScreen';
 import MaintenanceScreen from '../screens/MaintenanceScreen';
 import VehiclesScreen from '../screens/VehiclesScreen';
-import SettingsScreen from '../screens/SettingsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 
 import { useTheme } from '../context/ThemeContext';
@@ -22,28 +21,26 @@ export default function BottomTabs() {
         tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: 'gray',
         tabBarStyle: {
-          backgroundColor: theme.background,
-          borderTopWidth: 0,
+          backgroundColor: theme.card,
+          borderTopWidth: 1,
+          borderTopColor: theme.border,
           elevation: 5,
         },
         tabBarIcon: ({ color, size }) => {
-          let iconName = 'ellipse'; 
-
+          let iconName = 'ellipse';
           if (route.name === 'Inicio') iconName = 'home';
+          else if (route.name === 'Vehículos') iconName = 'car';
           else if (route.name === 'Historial') iconName = 'time';
-          else if (route.name === 'Docs') iconName = 'document-text';
-          else if (route.name === 'Reportes') iconName = 'bar-chart';
-          else if (route.name === 'Alertas') iconName = 'alert-circle';
+          else if (route.name === 'Perfil') iconName = 'person';
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
       })}
     >
       <Tab.Screen name="Inicio" component={HomeScreen} />
+      <Tab.Screen name="Vehículos" component={VehiclesScreen} />
       <Tab.Screen name="Historial" component={MaintenanceScreen} />
-      <Tab.Screen name="Docs" component={VehiclesScreen} />
-      <Tab.Screen name="Reportes" component={SettingsScreen} />
-      <Tab.Screen name="Alertas" component={ProfileScreen} />
+      <Tab.Screen name="Perfil" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }

@@ -24,7 +24,7 @@ export default function LoginScreen({ navigation }) {
       await AsyncStorage.setItem('token', response.data.access_token);
       await AsyncStorage.setItem('nombre', response.data.nombre);
       await AsyncStorage.setItem('userId', response.data.userId.toString());
-      navigation.replace('HomeScreen');
+      navigation.replace('Main');
     } catch (error) {
       Alert.alert('Error', 'Credenciales inválidas');
     } finally {
