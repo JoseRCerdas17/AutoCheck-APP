@@ -34,4 +34,27 @@ export class MaintenanceService {
   async remove(id: number): Promise<void> {
     await this.repo.delete(id);
   }
+
+  async getResumen(usuarioId: number): Promise<any> {
+    const mantenimientos = await this.repo.find({
+      where: { vehiculo: { usuario: { id: usuarioId } } },
+      relations: ['vehiculo'],
+      order: { fecha: 'DESC' },
+    });
+  
+    const totalGastado = mantenimientos.reduce((sum, m) => sum + Number(m.costo || 0), 0);
+    const totalMantenimientos = mantenimientos.length;
+    const ultimo = mantenimientos[0] || null;
+  
+    return {
+      totalGastado,
+      totalMantenimientos,
+      ultimoMantenimiento: ultimo ? {
+        tipo: ultimo.tipo,
+        fecha: ultimo.fecha,
+        taller: ultimo.taller,
+        vehiculo: ultimo.vehiculo ? `${ultimo.vehiculo.marca} ${ultimo.vehiculo.modelo}` : '',
+      } : null,
+    };
+  }
 }

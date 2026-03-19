@@ -1,31 +1,41 @@
 export const getBrandImage = (marca) => {
   if (!marca) return null;
 
-  const logos = {
-    toyota: 'https://cdn.brandfetch.io/idtCM9GLNB/w/400/h/400/theme/dark/icon.png',
-    honda: 'https://cdn.brandfetch.io/idKLgFQMrD/w/400/h/400/theme/dark/icon.png',
-    nissan: 'https://cdn.brandfetch.io/id_NizJVkX/w/400/h/400/theme/dark/icon.png',
-    hyundai: 'https://cdn.brandfetch.io/idP_JwVdnj/w/400/h/400/theme/dark/icon.png',
-    kia: 'https://cdn.brandfetch.io/idz5GKkSBc/w/400/h/400/theme/dark/icon.png',
-    mazda: 'https://cdn.brandfetch.io/idRvEd-EUw/w/400/h/400/theme/dark/icon.png',
-    ford: 'https://cdn.brandfetch.io/idCIar7_V-/w/400/h/400/theme/dark/icon.png',
-    chevrolet: 'https://cdn.brandfetch.io/idG0TIxDNl/w/400/h/400/theme/dark/icon.png',
-    volkswagen: 'https://cdn.brandfetch.io/id5mFTRroP/w/400/h/400/theme/dark/icon.png',
-    bmw: 'https://cdn.brandfetch.io/idOlFGKwFv/w/400/h/400/theme/dark/icon.png',
-    mercedes: 'https://cdn.brandfetch.io/idwSMoYVN0/w/400/h/400/theme/dark/icon.png',
-    audi: 'https://cdn.brandfetch.io/idaJCeNVuC/w/400/h/400/theme/dark/icon.png',
-    suzuki: 'https://cdn.brandfetch.io/id-lq_LSYD/w/400/h/400/theme/dark/icon.png',
-    mitsubishi: 'https://cdn.brandfetch.io/idCNQJCPSs/w/400/h/400/theme/dark/icon.png',
-    subaru: 'https://cdn.brandfetch.io/idKFDxhvdM/w/400/h/400/theme/dark/icon.png',
-    jeep: 'https://cdn.brandfetch.io/idVPSxf9um/w/400/h/400/theme/dark/icon.png',
-    tesla: 'https://cdn.brandfetch.io/id2C_5HLNH/w/400/h/400/theme/dark/icon.png',
-    volvo: 'https://cdn.brandfetch.io/idXFHFrBKL/w/400/h/400/theme/dark/icon.png',
-    porsche: 'https://cdn.brandfetch.io/idDzxMjCOd/w/400/h/400/theme/dark/icon.png',
-    lexus: 'https://cdn.brandfetch.io/idubF3HFGQ/w/400/h/400/theme/dark/icon.png',
+  const dominios = {
+    toyota: 'toyota.com',
+    honda: 'honda.com',
+    nissan: 'nissan.com',
+    hyundai: 'hyundai.com',
+    kia: 'kia.com',
+    mazda: 'mazda.com',
+    ford: 'ford.com',
+    chevrolet: 'chevrolet.com',
+    volkswagen: 'vw.com',
+    bmw: 'bmw.com',
+    mercedes: 'mercedes-benz.com',
+    audi: 'audi.com',
+    suzuki: 'suzuki.com',
+    mitsubishi: 'mitsubishi-motors.com',
+    subaru: 'subaru.com',
+    jeep: 'jeep.com',
+    dodge: 'dodge.com',
+    tesla: 'tesla.com',
+    volvo: 'volvocars.com',
+    peugeot: 'peugeot.com',
+    renault: 'renault.com',
+    fiat: 'fiat.com',
+    porsche: 'porsche.com',
+    lexus: 'lexus.com',
+    acura: 'acura.com',
+    chery: 'chery.com',
+    byd: 'byd.com',
+    ram: 'ramtrucks.com',
   };
 
   const key = marca.toLowerCase().trim().split(' ')[0];
-  return logos[key] || null;
+  const dominio = dominios[key];
+  if (!dominio) return null;
+  return `https://img.logo.dev/${dominio}?token=pk_SzAoMEgBR8Cfo9GrENHPpQ`;
 };
 
 export const getBrandColor = (marca) => {

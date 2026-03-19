@@ -13,6 +13,11 @@ export class MaintenanceController {
     return this.maintenanceService.create(dto);
   }
 
+  @Get('resumen/:usuarioId')
+  getResumen(@Param('usuarioId') usuarioId: string) {
+    return this.maintenanceService.getResumen(+usuarioId);
+  }
+
   @Get(':vehiculoId')
   findAll(@Param('vehiculoId') vehiculoId: string) {
     return this.maintenanceService.findAll(+vehiculoId);
