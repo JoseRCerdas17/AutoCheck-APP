@@ -142,9 +142,15 @@ export default function MaintenanceScreen({ navigation }) {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
 
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
-        <Text style={[styles.headerTitle, { color: theme.text }]}>Historial de Mantenimientos</Text>
-      </View>
+<View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+  <Text style={[styles.headerTitle, { color: theme.text }]}>Historial de Mantenimientos</Text>
+  <TouchableOpacity
+    style={[styles.addBtn, { backgroundColor: theme.primary }]}
+    onPress={() => navigation.navigate('AddMaintenance')}
+  >
+    <Ionicons name="add" size={20} color="#fff" />
+  </TouchableOpacity>
+</View>
 
       {/* Selector de vehículo */}
       {vehiculos.length > 1 && (
@@ -228,7 +234,7 @@ export default function MaintenanceScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { paddingHorizontal: 24, paddingTop: 60, paddingBottom: 16, borderBottomWidth: 1 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingTop: 60, paddingBottom: 16, borderBottomWidth: 1 },
   headerTitle: { fontSize: 22, fontWeight: 'bold' },
   vehiculosScroll: { maxHeight: 60 },
   vehiculoTab: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, marginRight: 8, borderWidth: 1 },
@@ -250,4 +256,5 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 15, marginTop: 12, marginBottom: 16, textAlign: 'center' },
   addButton: { borderRadius: 10, paddingHorizontal: 24, paddingVertical: 12 },
   addButtonText: { color: '#fff', fontWeight: 'bold' },
+  addBtn: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
 });
