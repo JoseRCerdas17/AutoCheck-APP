@@ -115,7 +115,7 @@ export default function VehiclesScreen({ navigation }) {
               <View style={styles.cardButtons}>
                 <TouchableOpacity
                   style={[styles.historialBtn, { borderColor: theme.primary }]}
-                  onPress={() => navigation.navigate('Historial', { vehiculoId: item.id })}
+                  onPress={() => navigation.navigate('VehicleDetail', { vehiculo: item })}
                 >
                   <MaterialIcons name="list-alt" size={16} color={theme.primary} />
                   <Text style={[styles.historialBtnText, { color: theme.primary }]}>Historial</Text>

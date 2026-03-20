@@ -1,4 +1,5 @@
 import ReportsScreen from '../screens/ReportsScreen';
+import VehicleDetailScreen from '../screens/VehicleDetailScreen';
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -31,6 +32,7 @@ export default function AppNavigator() {
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="AddMaintenance" component={AddMaintenanceScreen} />
         <Stack.Screen name="Alertas" component={AlertsScreen} />
+        <Stack.Screen name="VehicleDetail" component={VehicleDetailScreen} />
 <Stack.Screen name="Documentos" component={DocumentsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
