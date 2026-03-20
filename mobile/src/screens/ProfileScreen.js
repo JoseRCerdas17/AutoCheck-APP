@@ -1,4 +1,3 @@
-import api from '../services/api';
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, TouchableOpacity,
@@ -7,10 +6,12 @@ import {
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
+import api from '../services/api';
 
 export default function ProfileScreen({ navigation }) {
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
+  const [stats, setStats] = useState({ vehiculos: 0, mantenimientos: 0, totalGastado: 0 });
   const { theme } = useTheme();
 
   useEffect(() => {
@@ -20,8 +21,16 @@ export default function ProfileScreen({ navigation }) {
       setNombre(n || '');
       if (id) {
         try {
-          const res = await api.get(`/users/profile/${id}`);
-          setEmail(res.data.email);
+          const resProfile = await api.get(`/users/profile/${id}`);
+          setEmail(resProfile.data.email);
+
+          const resVehiculos = await api.get(`/vehicles/${id}`);
+          const resResumen = await api.get(`/maintenance/resumen/${id}`);
+          setStats({
+            vehiculos: resVehiculos.data.length,
+            mantenimientos: resResumen.data.totalMantenimientos,
+            totalGastado: resResumen.data.totalGastado,
+          });
         } catch (error) {
           console.log('Error cargando perfil', error);
         }
@@ -54,11 +63,7 @@ export default function ProfileScreen({ navigation }) {
 
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={24} color={theme.text} />
-          </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: theme.text }]}>Mi Perfil</Text>
-          <View style={{ width: 24 }} />
         </View>
 
         {/* Avatar */}
@@ -72,16 +77,38 @@ export default function ProfileScreen({ navigation }) {
           <Text style={[styles.email, { color: theme.textSecondary }]}>{email}</Text>
         </View>
 
+        {/* Estadísticas */}
+        <View style={styles.statsGrid}>
+          <View style={[styles.statCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <Ionicons name="car" size={24} color={theme.primary} />
+            <Text style={[styles.statNumber, { color: theme.text }]}>{stats.vehiculos}</Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Vehículos</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <MaterialIcons name="build" size={24} color={theme.primary} />
+            <Text style={[styles.statNumber, { color: theme.text }]}>{stats.mantenimientos}</Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Mantenimientos</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <MaterialIcons name="attach-money" size={24} color="#4CAF50" />
+            <Text style={[styles.statNumber, { color: theme.text }]}>
+              ₡{Number(stats.totalGastado).toLocaleString('es-CR')}
+            </Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Total Gastado</Text>
+          </View>
+        </View>
+
         {/* Cuenta */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Cuenta</Text>
 
-          <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card, borderColor: theme.border }]}
+            onPress={() => navigation.navigate('Settings')}>
             <View style={styles.menuLeft}>
               <View style={[styles.menuIcon, { backgroundColor: theme.border }]}>
-                <Ionicons name="person-outline" size={20} color={theme.primary} />
+                <Ionicons name="settings-outline" size={20} color={theme.primary} />
               </View>
-              <Text style={[styles.menuText, { color: theme.text }]}>Editar perfil</Text>
+              <Text style={[styles.menuText, { color: theme.text }]}>Ajustes</Text>
             </View>
             <MaterialIcons name="chevron-right" size={24} color={theme.textSecondary} />
           </TouchableOpacity>
@@ -95,23 +122,11 @@ export default function ProfileScreen({ navigation }) {
             </View>
             <MaterialIcons name="chevron-right" size={24} color={theme.textSecondary} />
           </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={() => navigation.navigate('Settings')}>
-            <View style={styles.menuLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: theme.border }]}>
-                <Ionicons name="settings-outline" size={20} color={theme.primary} />
-              </View>
-              <Text style={[styles.menuText, { color: theme.text }]}>Ajustes</Text>
-            </View>
-            <MaterialIcons name="chevron-right" size={24} color={theme.textSecondary} />
-          </TouchableOpacity>
-
         </View>
 
         {/* Membresía */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Membresía</Text>
-
           <TouchableOpacity style={[styles.premiumCard, { backgroundColor: theme.card, borderColor: theme.primary }]}>
             <View style={styles.premiumLeft}>
               <Ionicons name="star" size={24} color="#FFD700" />
@@ -127,7 +142,6 @@ export default function ProfileScreen({ navigation }) {
         {/* Soporte */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Soporte</Text>
-
           <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <View style={styles.menuLeft}>
               <View style={[styles.menuIcon, { backgroundColor: theme.border }]}>
@@ -150,9 +164,12 @@ export default function ProfileScreen({ navigation }) {
         </View>
 
         {/* Cerrar sesión */}
-        <TouchableOpacity style={[styles.logoutButton, { backgroundColor: theme.card, borderColor: theme.danger }]} onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={20} color={theme.danger} />
-          <Text style={[styles.logoutText, { color: theme.danger }]}>Cerrar sesión</Text>
+        <TouchableOpacity
+          style={[styles.logoutButton, { backgroundColor: theme.card, borderColor: '#FF5252' }]}
+          onPress={handleLogout}
+        >
+          <Ionicons name="log-out-outline" size={20} color="#FF5252" />
+          <Text style={[styles.logoutText, { color: '#FF5252' }]}>Cerrar sesión</Text>
         </TouchableOpacity>
 
         <Text style={[styles.version, { color: theme.textSecondary }]}>AutoCheck v1.0.0</Text>
@@ -164,13 +181,17 @@ export default function ProfileScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingTop: 60, paddingBottom: 16 },
+  header: { paddingHorizontal: 24, paddingTop: 60, paddingBottom: 8 },
   headerTitle: { fontSize: 24, fontWeight: 'bold' },
   avatarContainer: { alignItems: 'center', paddingVertical: 24 },
   avatar: { width: 90, height: 90, borderRadius: 45, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
   avatarText: { fontSize: 36, fontWeight: 'bold', color: '#FFFFFF' },
   nombre: { fontSize: 20, fontWeight: 'bold', marginBottom: 4 },
   email: { fontSize: 14 },
+  statsGrid: { flexDirection: 'row', paddingHorizontal: 16, gap: 8, marginBottom: 16 },
+  statCard: { flex: 1, borderRadius: 16, padding: 12, alignItems: 'center', borderWidth: 1 },
+  statNumber: { fontSize: 16, fontWeight: 'bold', marginTop: 6 },
+  statLabel: { fontSize: 11, marginTop: 2, textAlign: 'center' },
   section: { paddingHorizontal: 24, marginBottom: 8 },
   sectionTitle: { fontSize: 13, marginBottom: 8, marginTop: 16, textTransform: 'uppercase', letterSpacing: 1 },
   menuItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 12, padding: 16, marginBottom: 8, borderWidth: 1 },
