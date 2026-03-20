@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, Alert, Image
+  StyleSheet, Alert
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -14,6 +14,7 @@ export default function HomeScreen({ navigation }) {
   const [nombre, setNombre] = useState('');
   const [vehiculos, setVehiculos] = useState([]);
   const [resumen, setResumen] = useState(null);
+  const [alertas, setAlertas] = useState([]);
   const [showKilometrajeModal, setShowKilometrajeModal] = useState(false);
   const { theme } = useTheme();
 
@@ -36,6 +37,58 @@ export default function HomeScreen({ navigation }) {
 
           const resumenRes = await api.get(`/maintenance/resumen/${id}`);
           setResumen(resumenRes.data);
+
+          // Calcular alertas
+          let todasAlertas = [];
+          for (const v of res.data) {
+            const resMant = await api.get(`/maintenance/${v.id}`);
+            const mantenimientos = resMant.data;
+            const nombreVehiculo = `${v.marca} ${v.modelo}`;
+
+            const cambioAceite = mantenimientos.find(m => m.tipo?.toLowerCase().includes('aceite'));
+            if (cambioAceite) {
+              const kmDesde = v.kilometraje - (cambioAceite.kilometraje || 0);
+              if (kmDesde >= 4000) {
+                todasAlertas.push({
+                  id: `aceite-${v.id}`,
+                  vehiculo: nombreVehiculo,
+                  tipo: 'Cambio de Aceite',
+                  mensaje: `${kmDesde} km desde el último cambio`,
+                  nivel: kmDesde >= 5000 ? 'alto' : 'medio',
+                });
+              }
+            } else if (v.kilometraje > 5000) {
+              todasAlertas.push({
+                id: `aceite-nuevo-${v.id}`,
+                vehiculo: nombreVehiculo,
+                tipo: 'Cambio de Aceite',
+                mensaje: 'Sin registro de cambio de aceite',
+                nivel: 'alto',
+              });
+            }
+
+            if (mantenimientos.length > 0 && mantenimientos[0].fecha) {
+              const diasDesde = Math.floor(
+                (new Date() - new Date(mantenimientos[0].fecha)) / (1000 * 60 * 60 * 24)
+              );
+              if (diasDesde >= 150) {
+                todasAlertas.push({
+                  id: `tiempo-${v.id}`,
+                  vehiculo: nombreVehiculo,
+                  tipo: 'Revisión General',
+                  mensaje: `Hace ${diasDesde} días sin mantenimiento`,
+                  nivel: diasDesde >= 180 ? 'alto' : 'medio',
+                });
+              }
+            }
+          }
+
+          todasAlertas.sort((a, b) => {
+            const orden = { alto: 0, medio: 1, bajo: 2 };
+            return orden[a.nivel] - orden[b.nivel];
+          });
+          setAlertas(todasAlertas.slice(0, 3));
+
         } catch (error) {
           console.log('Error cargando datos', error);
         }
@@ -69,6 +122,12 @@ export default function HomeScreen({ navigation }) {
     );
   };
 
+  const getNivelColor = (nivel) => {
+    if (nivel === 'alto') return '#FF5252';
+    if (nivel === 'medio') return '#FF9800';
+    return '#29B6F6';
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
 
@@ -81,15 +140,72 @@ export default function HomeScreen({ navigation }) {
       <ScrollView showsVerticalScrollIndicator={false}>
 
         {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={[styles.greeting, { color: theme.text }]}>Hola, {nombre} 👋</Text>
-            <Text style={[styles.subGreeting, { color: theme.textSecondary }]}>Bienvenido a AutoCheck</Text>
-          </View>
-          <TouchableOpacity onPress={() => navigation.navigate('Profile')} style={styles.profileBtn}>
-            <Ionicons name="person-circle-outline" size={32} color={theme.textSecondary} />
-          </TouchableOpacity>
-        </View>
+        <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+  <View style={styles.headerTop}>
+    <View>
+      <Text style={[styles.greeting, { color: theme.text }]}>Hola, {nombre} 👋</Text>
+      <Text style={[styles.subGreeting, { color: theme.textSecondary }]}>Bienvenido a AutoCheck</Text>
+    </View>
+    <TouchableOpacity onPress={() => navigation.navigate('Profile')} style={[styles.avatarBtn, { backgroundColor: theme.primary }]}>
+      <Text style={styles.avatarText}>
+        {nombre ? nombre.charAt(0).toUpperCase() : 'U'}
+      </Text>
+    </TouchableOpacity>
+  </View>
+
+  {/* Stats rápidas */}
+  <View style={styles.headerStats}>
+    <View style={styles.headerStat}>
+      <Text style={[styles.headerStatNumber, { color: theme.primary }]}>{vehiculos.length}</Text>
+      <Text style={[styles.headerStatLabel, { color: theme.textSecondary }]}>Vehículos</Text>
+    </View>
+    <View style={[styles.headerDivider, { backgroundColor: theme.border }]} />
+    <View style={styles.headerStat}>
+      <Text style={[styles.headerStatNumber, { color: theme.primary }]}>
+        {resumen?.totalMantenimientos || 0}
+      </Text>
+      <Text style={[styles.headerStatLabel, { color: theme.textSecondary }]}>Servicios</Text>
+    </View>
+    <View style={[styles.headerDivider, { backgroundColor: theme.border }]} />
+    <View style={styles.headerStat}>
+      <Text style={[styles.headerStatNumber, { color: '#4CAF50' }]}>
+        {alertas.length}
+      </Text>
+      <Text style={[styles.headerStatLabel, { color: theme.textSecondary }]}>Alertas</Text>
+    </View>
+  </View>
+</View>
+
+        {/* Alertas */}
+        {alertas.length > 0 && (
+          <>
+            <View style={styles.sectionRow}>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>Alertas</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Alertas')}>
+                <Text style={[styles.verTodas, { color: theme.primary }]}>Ver todas →</Text>
+              </TouchableOpacity>
+            </View>
+            {alertas.map((alerta) => (
+              <View
+                key={alerta.id}
+                style={[styles.alertaCard, { backgroundColor: theme.card, borderColor: theme.border, borderLeftColor: getNivelColor(alerta.nivel) }]}
+              >
+                <View style={[styles.alertaDot, { backgroundColor: getNivelColor(alerta.nivel) }]} />
+                <View style={styles.alertaInfo}>
+                  <Text style={[styles.alertaTipo, { color: theme.text }]}>{alerta.tipo}</Text>
+                  <Text style={[styles.alertaMensaje, { color: theme.textSecondary }]}>
+                    {alerta.vehiculo} • {alerta.mensaje}
+                  </Text>
+                </View>
+                <View style={[styles.alertaNivel, { backgroundColor: getNivelColor(alerta.nivel) + '20' }]}>
+                  <Text style={[styles.alertaNivelText, { color: getNivelColor(alerta.nivel) }]}>
+                    {alerta.nivel === 'alto' ? 'Urgente' : 'Atención'}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </>
+        )}
 
         {/* Mis Vehículos */}
         <Text style={[styles.sectionTitle, { color: theme.text }]}>Mis Vehículos</Text>
@@ -116,11 +232,11 @@ export default function HomeScreen({ navigation }) {
                   <Text style={[styles.vehicleKm, { color: theme.accent }]}>{v.kilometraje} km</Text>
                 </View>
                 <TouchableOpacity
-                  style={[styles.deleteButton, { borderColor: theme.danger || '#FF5252' }]}
+                  style={[styles.deleteButton, { borderColor: '#FF5252' }]}
                   onPress={() => handleDelete(v.id)}
                 >
-                  <Ionicons name="trash-outline" size={16} color={theme.danger || '#FF5252'} />
-                  <Text style={[styles.deleteText, { color: theme.danger || '#FF5252' }]}>Eliminar</Text>
+                  <Ionicons name="trash-outline" size={16} color="#FF5252" />
+                  <Text style={[styles.deleteText, { color: '#FF5252' }]}>Eliminar</Text>
                 </TouchableOpacity>
               </View>
             ))}
@@ -145,7 +261,6 @@ export default function HomeScreen({ navigation }) {
                 <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Total Gastado</Text>
               </View>
             </View>
-
             {resumen.ultimoMantenimiento && (
               <View style={[styles.ultimoCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 <Text style={[styles.ultimoTitle, { color: theme.textSecondary }]}>Último Mantenimiento</Text>
@@ -185,10 +300,10 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.quickAccessItem, { backgroundColor: theme.card, borderColor: theme.border }]}
-            onPress={() => navigation.navigate('Profile')}
+            onPress={() => navigation.navigate('Documentos')}
           >
-            <MaterialIcons name="person" size={28} color={theme.primary} />
-            <Text style={[styles.quickAccessText, { color: theme.text }]}>Perfil</Text>
+            <MaterialIcons name="folder" size={28} color={theme.primary} />
+            <Text style={[styles.quickAccessText, { color: theme.text }]}>Documentos</Text>
           </TouchableOpacity>
         </View>
 
@@ -200,11 +315,28 @@ export default function HomeScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 24, paddingTop: 60 },
-  greeting: { fontSize: 22, fontWeight: 'bold' },
-  subGreeting: { fontSize: 13, marginTop: 2 },
+  header: { paddingHorizontal: 24, paddingTop: 60, paddingBottom: 20, borderBottomWidth: 1 },
+headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+greeting: { fontSize: 22, fontWeight: 'bold' },
+subGreeting: { fontSize: 13, marginTop: 2 },
+avatarBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
+avatarText: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
+headerStats: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' },
+headerStat: { alignItems: 'center', flex: 1 },
+headerStatNumber: { fontSize: 22, fontWeight: 'bold' },
+headerStatLabel: { fontSize: 12, marginTop: 2 },
+headerDivider: { width: 1, height: 30 },
   profileBtn: { padding: 8 },
+  sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, marginBottom: 12, marginTop: 8 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', paddingHorizontal: 24, marginBottom: 12, marginTop: 8 },
+  verTodas: { fontSize: 13, fontWeight: '600' },
+  alertaCard: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 24, marginBottom: 8, borderRadius: 12, padding: 14, borderWidth: 1, borderLeftWidth: 4 },
+  alertaDot: { width: 8, height: 8, borderRadius: 4, marginRight: 12 },
+  alertaInfo: { flex: 1 },
+  alertaTipo: { fontSize: 14, fontWeight: 'bold' },
+  alertaMensaje: { fontSize: 12, marginTop: 2 },
+  alertaNivel: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, marginLeft: 8 },
+  alertaNivelText: { fontSize: 11, fontWeight: 'bold' },
   emptyCard: { margin: 24, borderRadius: 16, padding: 32, alignItems: 'center', borderWidth: 1 },
   emptyText: { marginTop: 12, marginBottom: 16, fontSize: 14 },
   addButton: { borderRadius: 10, paddingHorizontal: 24, paddingVertical: 12 },
