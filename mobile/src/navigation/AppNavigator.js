@@ -10,6 +10,8 @@ import AddVehicleScreen from '../screens/AddVehicleScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import AddMaintenanceScreen from '../screens/AddMaintenanceScreen';
+import AlertsScreen from '../screens/AlertsScreen';
+import DocumentsScreen from '../screens/DocumentsScreen';
 import BottomTabs from './BottomTabs';
 
 const Stack = createStackNavigator();
@@ -28,6 +30,8 @@ export default function AppNavigator() {
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="AddMaintenance" component={AddMaintenanceScreen} />
+        <Stack.Screen name="Alertas" component={AlertsScreen} />
+<Stack.Screen name="Documentos" component={DocumentsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

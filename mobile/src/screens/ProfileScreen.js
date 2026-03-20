@@ -11,7 +11,7 @@ import api from '../services/api';
 export default function ProfileScreen({ navigation }) {
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
-  const [stats, setStats] = useState({ vehiculos: 0, mantenimientos: 0, totalGastado: 0 });
+  const [stats, setStats] = useState({ vehiculos: 0, mantenimientos: 0, totalGastado: 0, alertas: 0 });
   const { theme } = useTheme();
 
   useEffect(() => {
@@ -26,11 +26,26 @@ export default function ProfileScreen({ navigation }) {
 
           const resVehiculos = await api.get(`/vehicles/${id}`);
           const resResumen = await api.get(`/maintenance/resumen/${id}`);
-          setStats({
-            vehiculos: resVehiculos.data.length,
-            mantenimientos: resResumen.data.totalMantenimientos,
-            totalGastado: resResumen.data.totalGastado,
-          });
+          // Calcular alertas
+let totalAlertas = 0;
+for (const v of resVehiculos.data) {
+  const resMant = await api.get(`/maintenance/${v.id}`);
+  const mantenimientos = resMant.data;
+  const cambioAceite = mantenimientos.find(m => m.tipo?.toLowerCase().includes('aceite'));
+  if (cambioAceite) {
+    const kmDesde = v.kilometraje - (cambioAceite.kilometraje || 0);
+    if (kmDesde >= 4000) totalAlertas++;
+  } else if (v.kilometraje > 5000) {
+    totalAlertas++;
+  }
+}
+
+setStats({
+  vehiculos: resVehiculos.data.length,
+  mantenimientos: resResumen.data.totalMantenimientos,
+  totalGastado: resResumen.data.totalGastado,
+  alertas: totalAlertas,
+});
         } catch (error) {
           console.log('Error cargando perfil', error);
         }
@@ -99,30 +114,57 @@ export default function ProfileScreen({ navigation }) {
         </View>
 
         {/* Cuenta */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Cuenta</Text>
+<View style={styles.section}>
+  <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Cuenta</Text>
 
-          <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card, borderColor: theme.border }]}
-            onPress={() => navigation.navigate('Settings')}>
-            <View style={styles.menuLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: theme.border }]}>
-                <Ionicons name="settings-outline" size={20} color={theme.primary} />
-              </View>
-              <Text style={[styles.menuText, { color: theme.text }]}>Ajustes</Text>
-            </View>
-            <MaterialIcons name="chevron-right" size={24} color={theme.textSecondary} />
-          </TouchableOpacity>
+  <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card, borderColor: theme.border }]}
+    onPress={() => navigation.navigate('Settings')}>
+    <View style={styles.menuLeft}>
+      <View style={[styles.menuIcon, { backgroundColor: theme.border }]}>
+        <Ionicons name="settings-outline" size={20} color={theme.primary} />
+      </View>
+      <Text style={[styles.menuText, { color: theme.text }]}>Ajustes</Text>
+    </View>
+    <MaterialIcons name="chevron-right" size={24} color={theme.textSecondary} />
+  </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            <View style={styles.menuLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: theme.border }]}>
-                <Ionicons name="lock-closed-outline" size={20} color={theme.primary} />
-              </View>
-              <Text style={[styles.menuText, { color: theme.text }]}>Cambiar contraseña</Text>
-            </View>
-            <MaterialIcons name="chevron-right" size={24} color={theme.textSecondary} />
-          </TouchableOpacity>
+  <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card, borderColor: theme.border }]}
+    onPress={() => navigation.navigate('Alertas')}>
+    <View style={styles.menuLeft}>
+      <View style={[styles.menuIcon, { backgroundColor: theme.border }]}>
+        <MaterialIcons name="notifications" size={20} color={theme.primary} />
+      </View>
+      <Text style={[styles.menuText, { color: theme.text }]}>Alertas</Text>
+      {stats.alertas > 0 && (
+        <View style={[styles.badge, { backgroundColor: '#FF5252' }]}>
+          <Text style={styles.badgeText}>{stats.alertas}</Text>
         </View>
+      )}
+    </View>
+    <MaterialIcons name="chevron-right" size={24} color={theme.textSecondary} />
+  </TouchableOpacity>
+
+  <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card, borderColor: theme.border }]}
+    onPress={() => navigation.navigate('Documentos')}>
+    <View style={styles.menuLeft}>
+      <View style={[styles.menuIcon, { backgroundColor: theme.border }]}>
+        <MaterialIcons name="folder" size={20} color={theme.primary} />
+      </View>
+      <Text style={[styles.menuText, { color: theme.text }]}>Documentos</Text>
+    </View>
+    <MaterialIcons name="chevron-right" size={24} color={theme.textSecondary} />
+  </TouchableOpacity>
+
+  <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card, borderColor: theme.border }]}>
+    <View style={styles.menuLeft}>
+      <View style={[styles.menuIcon, { backgroundColor: theme.border }]}>
+        <Ionicons name="lock-closed-outline" size={20} color={theme.primary} />
+      </View>
+      <Text style={[styles.menuText, { color: theme.text }]}>Cambiar contraseña</Text>
+    </View>
+    <MaterialIcons name="chevron-right" size={24} color={theme.textSecondary} />
+  </TouchableOpacity>
+</View>
 
         {/* Membresía */}
         <View style={styles.section}>
@@ -206,4 +248,6 @@ const styles = StyleSheet.create({
   logoutButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: 24, marginTop: 24, marginBottom: 16, borderRadius: 12, padding: 16, borderWidth: 1 },
   logoutText: { fontSize: 16, fontWeight: 'bold', marginLeft: 8 },
   version: { textAlign: 'center', fontSize: 12, marginBottom: 32 },
+  badge: { borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2, marginLeft: 8 },
+badgeText: { color: '#fff', fontSize: 11, fontWeight: 'bold' },
 });
