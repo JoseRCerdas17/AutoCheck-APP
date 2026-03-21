@@ -27,4 +27,9 @@ export class MaintenanceController {
   remove(@Param('id') id: string) {
     return this.maintenanceService.remove(+id);
   }
+
+  @Get('verificar-alertas/:usuarioId')
+verificarAlertas(@Param('usuarioId') usuarioId: string) {
+  return this.maintenanceService.verificarAlertas(+usuarioId);
+}
 }

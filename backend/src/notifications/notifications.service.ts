@@ -32,4 +32,12 @@ export class NotificationsService {
       }
     }
   }
+
+
+  async enviarNotificacionAUsuario(userId: number, titulo: string, cuerpo: string, datos: any = {}) {
+    const usuario = await this.usersService.findById(userId);
+    if (usuario?.pushToken) {
+      await this.enviarNotificacion(usuario.pushToken, titulo, cuerpo, datos);
+    }
+  }
 }

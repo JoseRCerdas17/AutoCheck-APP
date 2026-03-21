@@ -3,12 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Maintenance } from './maintenance.entity';
 import { CreateMaintenanceDto } from './dto/create-maintenance.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class MaintenanceService {
   constructor(
     @InjectRepository(Maintenance)
     private repo: Repository<Maintenance>,
+    private notificationsService: NotificationsService,
   ) {}
 
   async create(dto: CreateMaintenanceDto): Promise<Maintenance> {
@@ -56,5 +58,36 @@ export class MaintenanceService {
         vehiculo: ultimo.vehiculo ? `${ultimo.vehiculo.marca} ${ultimo.vehiculo.modelo}` : '',
       } : null,
     };
+  }
+
+
+  async verificarAlertas(usuarioId: number): Promise<void> {
+    const vehiculos = await this.repo.query(
+      `SELECT v.* FROM vehiculos v WHERE v."usuarioId" = $1`,
+      [usuarioId]
+    );
+  
+    for (const v of vehiculos) {
+      const mantenimientos = await this.repo.find({
+        where: { vehiculo: { id: v.id } },
+        order: { fecha: 'DESC' },
+      });
+  
+      const cambioAceite = mantenimientos.find(m =>
+        m.tipo?.toLowerCase().includes('aceite')
+      );
+  
+      if (cambioAceite) {
+        const kmDesde = v.kilometraje - (cambioAceite.kilometraje || 0);
+        if (kmDesde >= 5000) {
+          await this.notificationsService.enviarNotificacionAUsuario(
+            usuarioId,
+            '⚠️ Cambio de aceite urgente',
+            `${v.marca} ${v.modelo} necesita cambio de aceite (${kmDesde} km desde el último)`,
+            { vehiculoId: v.id }
+          );
+        }
+      }
+    }
   }
 }
