@@ -26,6 +26,12 @@
     },
     "plugins": [
       "expo-asset"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "678a9f60-85d7-4370-9629-d13a9910f8f1"
+      }
+    },
+    "owner": "josercc1117"
   }
 }

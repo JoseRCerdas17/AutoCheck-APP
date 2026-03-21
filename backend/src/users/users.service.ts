@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Not } from 'typeorm';
 import { User } from './user.entity';
 
 @Injectable()
@@ -31,7 +31,22 @@ export class UsersService {
       throw new NotFoundException('Usuario no encontrado');
     }
 
+    
+
     const { password, ...profile } = user;
     return profile;
+  }
+
+
+
+  async savePushToken(userId: number, pushToken: string): Promise<void> {
+    await this.repo.update(userId, { pushToken });
+  }
+  
+  async getUsersWithPushTokens(): Promise<User[]> {
+    return this.repo
+      .createQueryBuilder('user')
+      .where('user.pushToken IS NOT NULL')
+      .getMany();
   }
 }

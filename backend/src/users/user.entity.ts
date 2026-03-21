@@ -17,6 +17,9 @@ export class User {
   @Column({ default: false })
   membresia: boolean;
 
+  @Column({ nullable: true })
+  pushToken: string;
+
   @CreateDateColumn({ name: 'creado_en' })
   creadoEn: Date;
 }
