@@ -276,37 +276,47 @@ export default function HomeScreen({ navigation }) {
         )}
 
         {/* Accesos Rápidos */}
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Accesos Rápidos</Text>
-        <View style={styles.quickAccessGrid}>
-          <TouchableOpacity
-            style={[styles.quickAccessItem, { backgroundColor: theme.card, borderColor: theme.border }]}
-            onPress={() => navigation.navigate('AddVehicle')}
-          >
-            <MaterialIcons name="add-circle-outline" size={28} color={theme.primary} />
-            <Text style={[styles.quickAccessText, { color: theme.text }]}>Registrar Vehículo</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.quickAccessItem, { backgroundColor: theme.card, borderColor: theme.border }]}
-            onPress={() => navigation.navigate('Historial')}
-          >
-            <MaterialIcons name="list-alt" size={28} color={theme.primary} />
-            <Text style={[styles.quickAccessText, { color: theme.text }]}>Historial</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.quickAccessItem, { backgroundColor: theme.card, borderColor: theme.border }]}
-            onPress={() => navigation.navigate('AddMaintenance')}
-          >
-            <MaterialIcons name="build" size={28} color={theme.primary} />
-            <Text style={[styles.quickAccessText, { color: theme.text }]}>Agregar Mantenimiento</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.quickAccessItem, { backgroundColor: theme.card, borderColor: theme.border }]}
-            onPress={() => navigation.navigate('Documentos')}
-          >
-            <MaterialIcons name="folder" size={28} color={theme.primary} />
-            <Text style={[styles.quickAccessText, { color: theme.text }]}>Documentos</Text>
-          </TouchableOpacity>
-        </View>
+<Text style={[styles.sectionTitle, { color: theme.text }]}>Accesos Rápidos</Text>
+<View style={styles.quickAccessGrid}>
+
+  <TouchableOpacity
+    style={[styles.quickAccessCard, { backgroundColor: '#5B2EE8' }]}
+    onPress={() => navigation.navigate('AddMaintenance')}
+  >
+    <MaterialIcons name="build" size={28} color="#fff" />
+    <Text style={styles.quickAccessCardText}>Agregar{'\n'}Mantenimiento</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    style={[styles.quickAccessCard, { backgroundColor: '#FF5252' }]}
+    onPress={() => navigation.navigate('Alertas')}
+  >
+    <MaterialIcons name="notifications" size={28} color="#fff" />
+    <Text style={styles.quickAccessCardText}>Ver{'\n'}Alertas</Text>
+    {alertas.length > 0 && (
+      <View style={styles.quickAccessBadge}>
+        <Text style={styles.quickAccessBadgeText}>{alertas.length}</Text>
+      </View>
+    )}
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    style={[styles.quickAccessCard, { backgroundColor: '#29B6F6' }]}
+    onPress={() => navigation.navigate('Reportes')}
+  >
+    <MaterialIcons name="bar-chart" size={28} color="#fff" />
+    <Text style={styles.quickAccessCardText}>Ver{'\n'}Reportes</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    style={[styles.quickAccessCard, { backgroundColor: '#4CAF50' }]}
+    onPress={() => navigation.navigate('Documentos')}
+  >
+    <MaterialIcons name="folder" size={28} color="#fff" />
+    <Text style={styles.quickAccessCardText}>Mis{'\n'}Documentos</Text>
+  </TouchableOpacity>
+
+</View>
 
         <View style={{ height: 32 }} />
       </ScrollView>
@@ -358,7 +368,9 @@ const styles = StyleSheet.create({
   ultimoTitle: { fontSize: 12, marginBottom: 4 },
   ultimoTipo: { fontSize: 16, fontWeight: 'bold' },
   ultimoDetalle: { fontSize: 13, marginTop: 4 },
-  quickAccessGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, marginBottom: 32 },
-  quickAccessItem: { width: '46%', borderRadius: 16, padding: 20, margin: '2%', alignItems: 'center', borderWidth: 1 },
-  quickAccessText: { fontSize: 13, marginTop: 8, textAlign: 'center' },
+  quickAccessGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, gap: 12, marginBottom: 32 },
+quickAccessCard: { width: '46%', borderRadius: 20, padding: 20, justifyContent: 'space-between', minHeight: 110 },
+quickAccessCardText: { color: '#fff', fontSize: 14, fontWeight: 'bold', marginTop: 12 },
+quickAccessBadge: { position: 'absolute', top: 12, right: 12, backgroundColor: '#fff', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2 },
+quickAccessBadgeText: { color: '#FF5252', fontSize: 11, fontWeight: 'bold' },
 });
