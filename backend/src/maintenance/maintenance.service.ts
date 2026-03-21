@@ -63,7 +63,7 @@ export class MaintenanceService {
 
   async verificarAlertas(usuarioId: number): Promise<void> {
     const vehiculos = await this.repo.query(
-      `SELECT v.* FROM vehiculos v WHERE v."usuarioId" = $1`,
+      `SELECT v.* FROM vehiculos v WHERE v.usuario_id = $1`,
       [usuarioId]
     );
   
