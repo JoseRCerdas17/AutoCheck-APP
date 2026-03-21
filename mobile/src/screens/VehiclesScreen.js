@@ -6,7 +6,7 @@ import {
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
-import { getBrandImage, getBrandColor } from '../theme/carBrands';
+import { getBrandColor } from '../theme/carBrands';
 import api from '../services/api';
 
 export default function VehiclesScreen({ navigation }) {
@@ -66,7 +66,6 @@ export default function VehiclesScreen({ navigation }) {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-
         {vehicles.length === 0 ? (
           <View style={styles.emptyContainer}>
             <MaterialIcons name="directions-car" size={64} color={theme.textSecondary} />
@@ -84,16 +83,16 @@ export default function VehiclesScreen({ navigation }) {
           vehicles.map((item) => (
             <View key={item.id} style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
 
-              {/* Color de marca con inicial */}
-<View style={[styles.cardImageContainer, { backgroundColor: getBrandColor(item.marca) }]}>
-  {item.imagen ? (
-    <Image source={{ uri: item.imagen }} style={styles.cardImage} resizeMode="cover" />
-  ) : (
-    <Text style={styles.brandInitial}>
-      {item.marca ? item.marca.charAt(0).toUpperCase() : '?'}
-    </Text>
-  )}
-</View>
+              {/* Imagen */}
+              <View style={[styles.cardImageContainer, { backgroundColor: getBrandColor(item.marca) }]}>
+                {item.imagen ? (
+                  <Image source={{ uri: item.imagen }} style={styles.cardImage} resizeMode="cover" />
+                ) : (
+                  <Text style={styles.brandInitial}>
+                    {item.marca ? item.marca.charAt(0).toUpperCase() : '?'}
+                  </Text>
+                )}
+              </View>
 
               {/* Info */}
               <View style={styles.cardInfo}>
@@ -118,21 +117,18 @@ export default function VehiclesScreen({ navigation }) {
                   onPress={() => navigation.navigate('VehicleDetail', { vehiculo: item })}
                 >
                   <MaterialIcons name="list-alt" size={16} color={theme.primary} />
-                  <Text style={[styles.historialBtnText, { color: theme.primary }]}>Historial</Text>
+                  <Text style={[styles.historialBtnText, { color: theme.primary }]}>Ver detalle</Text>
                 </TouchableOpacity>
-
                 <TouchableOpacity
-                  style={[styles.deleteBtn, { borderColor: theme.danger }]}
+                  style={[styles.deleteBtn, { borderColor: '#FF5252' }]}
                   onPress={() => handleEliminar(item.id, `${item.marca} ${item.modelo}`)}
                 >
-                  <Ionicons name="trash-outline" size={16} color={theme.danger} />
+                  <Ionicons name="trash-outline" size={16} color="#FF5252" />
                 </TouchableOpacity>
               </View>
-
             </View>
           ))
         )}
-
         <View style={{ height: 32 }} />
       </ScrollView>
     </View>
@@ -149,9 +145,9 @@ const styles = StyleSheet.create({
   button: { borderRadius: 10, paddingHorizontal: 24, paddingVertical: 12 },
   buttonText: { color: '#fff', fontWeight: 'bold' },
   card: { marginHorizontal: 16, marginBottom: 16, borderRadius: 16, borderWidth: 1, overflow: 'hidden' },
-  cardImageContainer: { height: 140, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(128,128,128,0.05)' },
+  cardImageContainer: { height: 140, justifyContent: 'center', alignItems: 'center' },
   cardImage: { width: '100%', height: '100%' },
-  brandLogo: { width: 120, height: 70 },
+  brandInitial: { fontSize: 64, fontWeight: 'bold', color: 'rgba(255,255,255,0.9)' },
   cardInfo: { padding: 16 },
   cardTitle: { fontSize: 18, fontWeight: 'bold' },
   cardSubtitle: { fontSize: 14, marginTop: 4 },
@@ -161,9 +157,4 @@ const styles = StyleSheet.create({
   historialBtn: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8, flex: 1, justifyContent: 'center' },
   historialBtnText: { fontSize: 13, fontWeight: '600', marginLeft: 4 },
   deleteBtn: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8, justifyContent: 'center', alignItems: 'center' },
-  brandInitialContainer: { width: 70, height: 70, borderRadius: 35, justifyContent: 'center', alignItems: 'center' },
-brandInitial: { fontSize: 32, fontWeight: 'bold', color: '#fff' },
-cardImageContainer: { height: 140, justifyContent: 'center', alignItems: 'center' },
-cardImage: { width: '100%', height: '100%' },
-brandInitial: { fontSize: 64, fontWeight: 'bold', color: 'rgba(255,255,255,0.9)' },
 });

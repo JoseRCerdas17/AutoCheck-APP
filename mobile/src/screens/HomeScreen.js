@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, Alert
+  StyleSheet, Alert, Image
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -38,7 +38,6 @@ export default function HomeScreen({ navigation }) {
           const resumenRes = await api.get(`/maintenance/resumen/${id}`);
           setResumen(resumenRes.data);
 
-          // Calcular alertas
           let todasAlertas = [];
           for (const v of res.data) {
             const resMant = await api.get(`/maintenance/${v.id}`);
@@ -141,40 +140,38 @@ export default function HomeScreen({ navigation }) {
 
         {/* Header */}
         <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
-  <View style={styles.headerTop}>
-    <View>
-      <Text style={[styles.greeting, { color: theme.text }]}>Hola, {nombre} 👋</Text>
-      <Text style={[styles.subGreeting, { color: theme.textSecondary }]}>Bienvenido a AutoCheck</Text>
-    </View>
-    <TouchableOpacity onPress={() => navigation.navigate('Profile')} style={[styles.avatarBtn, { backgroundColor: theme.primary }]}>
-      <Text style={styles.avatarText}>
-        {nombre ? nombre.charAt(0).toUpperCase() : 'U'}
-      </Text>
-    </TouchableOpacity>
-  </View>
-
-  {/* Stats rápidas */}
-  <View style={styles.headerStats}>
-    <View style={styles.headerStat}>
-      <Text style={[styles.headerStatNumber, { color: theme.primary }]}>{vehiculos.length}</Text>
-      <Text style={[styles.headerStatLabel, { color: theme.textSecondary }]}>Vehículos</Text>
-    </View>
-    <View style={[styles.headerDivider, { backgroundColor: theme.border }]} />
-    <View style={styles.headerStat}>
-      <Text style={[styles.headerStatNumber, { color: theme.primary }]}>
-        {resumen?.totalMantenimientos || 0}
-      </Text>
-      <Text style={[styles.headerStatLabel, { color: theme.textSecondary }]}>Servicios</Text>
-    </View>
-    <View style={[styles.headerDivider, { backgroundColor: theme.border }]} />
-    <View style={styles.headerStat}>
-      <Text style={[styles.headerStatNumber, { color: '#4CAF50' }]}>
-        {alertas.length}
-      </Text>
-      <Text style={[styles.headerStatLabel, { color: theme.textSecondary }]}>Alertas</Text>
-    </View>
-  </View>
-</View>
+          <View style={styles.headerTop}>
+            <View>
+              <Text style={[styles.greeting, { color: theme.text }]}>Hola, {nombre} 👋</Text>
+              <Text style={[styles.subGreeting, { color: theme.textSecondary }]}>Bienvenido a AutoCheck</Text>
+            </View>
+            <TouchableOpacity onPress={() => navigation.navigate('Profile')} style={[styles.avatarBtn, { backgroundColor: theme.primary }]}>
+              <Text style={styles.avatarText}>
+                {nombre ? nombre.charAt(0).toUpperCase() : 'U'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.headerStats}>
+            <View style={styles.headerStat}>
+              <Text style={[styles.headerStatNumber, { color: theme.primary }]}>{vehiculos.length}</Text>
+              <Text style={[styles.headerStatLabel, { color: theme.textSecondary }]}>Vehículos</Text>
+            </View>
+            <View style={[styles.headerDivider, { backgroundColor: theme.border }]} />
+            <View style={styles.headerStat}>
+              <Text style={[styles.headerStatNumber, { color: theme.primary }]}>
+                {resumen?.totalMantenimientos || 0}
+              </Text>
+              <Text style={[styles.headerStatLabel, { color: theme.textSecondary }]}>Servicios</Text>
+            </View>
+            <View style={[styles.headerDivider, { backgroundColor: theme.border }]} />
+            <View style={styles.headerStat}>
+              <Text style={[styles.headerStatNumber, { color: '#FF5252' }]}>
+                {alertas.length}
+              </Text>
+              <Text style={[styles.headerStatLabel, { color: theme.textSecondary }]}>Alertas</Text>
+            </View>
+          </View>
+        </View>
 
         {/* Alertas */}
         {alertas.length > 0 && (
@@ -222,9 +219,13 @@ export default function HomeScreen({ navigation }) {
             {vehiculos.map((v) => (
               <View key={v.id} style={[styles.vehicleCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 <View style={[styles.vehicleColorBar, { backgroundColor: getBrandColor(v.marca) }]}>
-                  <Text style={styles.vehicleInitial}>
-                    {v.marca ? v.marca.charAt(0).toUpperCase() : '?'}
-                  </Text>
+                  {v.imagen ? (
+                    <Image source={{ uri: v.imagen }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                  ) : (
+                    <Text style={styles.vehicleInitial}>
+                      {v.marca ? v.marca.charAt(0).toUpperCase() : '?'}
+                    </Text>
+                  )}
                 </View>
                 <View style={styles.vehicleInfo}>
                   <Text style={[styles.vehicleName, { color: theme.text }]}>{v.marca} {v.modelo}</Text>
@@ -316,17 +317,16 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { paddingHorizontal: 24, paddingTop: 60, paddingBottom: 20, borderBottomWidth: 1 },
-headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-greeting: { fontSize: 22, fontWeight: 'bold' },
-subGreeting: { fontSize: 13, marginTop: 2 },
-avatarBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
-avatarText: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
-headerStats: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' },
-headerStat: { alignItems: 'center', flex: 1 },
-headerStatNumber: { fontSize: 22, fontWeight: 'bold' },
-headerStatLabel: { fontSize: 12, marginTop: 2 },
-headerDivider: { width: 1, height: 30 },
-  profileBtn: { padding: 8 },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  greeting: { fontSize: 22, fontWeight: 'bold' },
+  subGreeting: { fontSize: 13, marginTop: 2 },
+  avatarBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
+  avatarText: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
+  headerStats: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' },
+  headerStat: { alignItems: 'center', flex: 1 },
+  headerStatNumber: { fontSize: 22, fontWeight: 'bold' },
+  headerStatLabel: { fontSize: 12, marginTop: 2 },
+  headerDivider: { width: 1, height: 30 },
   sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, marginBottom: 12, marginTop: 8 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', paddingHorizontal: 24, marginBottom: 12, marginTop: 8 },
   verTodas: { fontSize: 13, fontWeight: '600' },
@@ -342,7 +342,7 @@ headerDivider: { width: 1, height: 30 },
   addButton: { borderRadius: 10, paddingHorizontal: 24, paddingVertical: 12 },
   addButtonText: { color: '#fff', fontWeight: 'bold' },
   vehicleCard: { borderRadius: 16, marginLeft: 24, marginRight: 8, marginBottom: 8, width: 200, borderWidth: 1, overflow: 'hidden' },
-  vehicleColorBar: { height: 80, justifyContent: 'center', alignItems: 'center' },
+  vehicleColorBar: { height: 80, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
   vehicleInitial: { fontSize: 40, fontWeight: 'bold', color: 'rgba(255,255,255,0.9)' },
   vehicleInfo: { padding: 12 },
   vehicleName: { fontSize: 15, fontWeight: 'bold' },
