@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View, Text, TouchableOpacity,
   StyleSheet, ScrollView, Switch
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
 
 export default function SettingsScreen({ navigation }) {
@@ -11,6 +12,37 @@ export default function SettingsScreen({ navigation }) {
   const [notificaciones, setNotificaciones] = React.useState(true);
   const [notifKilometraje, setNotifKilometraje] = React.useState(true);
   const [notifFecha, setNotifFecha] = React.useState(true);
+
+  // Cargar preferencias guardadas al abrir la pantalla
+  useEffect(() => {
+    const cargarPreferencias = async () => {
+      const notif = await AsyncStorage.getItem('notificaciones_activas');
+      const km = await AsyncStorage.getItem('notificaciones_kilometraje');
+      const fecha = await AsyncStorage.getItem('notificaciones_fecha');
+      if (notif !== null) setNotificaciones(notif === 'true');
+      if (km !== null) setNotifKilometraje(km === 'true');
+      if (fecha !== null) setNotifFecha(fecha === 'true');
+    };
+    cargarPreferencias();
+  }, []);
+
+  // Guardar preferencia de notificaciones push
+  const handleNotificaciones = async (value) => {
+    setNotificaciones(value);
+    await AsyncStorage.setItem('notificaciones_activas', value.toString());
+  };
+
+  // Guardar preferencia de alertas por kilometraje
+  const handleNotifKilometraje = async (value) => {
+    setNotifKilometraje(value);
+    await AsyncStorage.setItem('notificaciones_kilometraje', value.toString());
+  };
+
+  // Guardar preferencia de alertas por fecha
+  const handleNotifFecha = async (value) => {
+    setNotifFecha(value);
+    await AsyncStorage.setItem('notificaciones_fecha', value.toString());
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -40,7 +72,7 @@ export default function SettingsScreen({ navigation }) {
             </View>
             <Switch
               value={notificaciones}
-              onValueChange={setNotificaciones}
+              onValueChange={handleNotificaciones}
               trackColor={{ false: theme.border, true: theme.primary }}
               thumbColor="#FFFFFF"
             />
@@ -58,7 +90,7 @@ export default function SettingsScreen({ navigation }) {
             </View>
             <Switch
               value={notifKilometraje}
-              onValueChange={setNotifKilometraje}
+              onValueChange={handleNotifKilometraje}
               trackColor={{ false: theme.border, true: theme.primary }}
               thumbColor="#FFFFFF"
             />
@@ -76,7 +108,7 @@ export default function SettingsScreen({ navigation }) {
             </View>
             <Switch
               value={notifFecha}
-              onValueChange={setNotifFecha}
+              onValueChange={handleNotifFecha}
               trackColor={{ false: theme.border, true: theme.primary }}
               thumbColor="#FFFFFF"
             />
