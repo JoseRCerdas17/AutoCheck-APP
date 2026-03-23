@@ -1,3 +1,4 @@
+import { formatRecorrido } from '../utils/unidades';
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
@@ -103,8 +104,8 @@ export default function VehiclesScreen({ navigation }) {
                   {item.anio} • {item.placa}
                 </Text>
                 <Text style={[styles.cardKm, { color: theme.accent }]}>
-                  {item.kilometraje} km
-                </Text>
+  {formatRecorrido(item.kilometraje, item.unidad)}
+</Text>
                 <Text style={[styles.cardCombustible, { color: theme.textSecondary }]}>
                   {item.combustible}
                 </Text>

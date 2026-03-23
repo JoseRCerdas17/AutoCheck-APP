@@ -1,3 +1,4 @@
+import { formatRecorrido } from '../utils/unidades';
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
@@ -230,7 +231,7 @@ export default function HomeScreen({ navigation }) {
                 <View style={styles.vehicleInfo}>
                   <Text style={[styles.vehicleName, { color: theme.text }]}>{v.marca} {v.modelo}</Text>
                   <Text style={[styles.vehicleDetail, { color: theme.textSecondary }]}>{v.anio} • {v.placa}</Text>
-                  <Text style={[styles.vehicleKm, { color: theme.accent }]}>{v.kilometraje} km</Text>
+                  <Text style={[styles.vehicleKm, { color: theme.accent }]}>{formatRecorrido(v.kilometraje, v.unidad)}</Text>
                 </View>
                 <TouchableOpacity
                   style={[styles.deleteButton, { borderColor: '#FF5252' }]}

@@ -21,16 +21,16 @@ export default function AddVehicleScreen({ navigation }) {
   const [placa, setPlaca] = useState('');
   const [combustible, setCombustible] = useState('');
   const [kilometraje, setKilometraje] = useState('');
+  const [unidad, setUnidad] = useState('km');
   const [imagen, setImagen] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState(1);
   const { theme } = useTheme();
 
   const formAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.timing(formAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
-  }, [step]);
+  }, []);
 
   const marcaFinal = marca === 'Otra' ? marcaCustom : marca;
 
@@ -82,6 +82,10 @@ export default function AddVehicleScreen({ navigation }) {
       Alert.alert('Error', 'Por favor completá todos los campos');
       return;
     }
+    const kmFinal = unidad === 'mi'
+      ? Math.round(parseInt(kilometraje) * 1.60934)
+      : parseInt(kilometraje);
+
     setLoading(true);
     try {
       const userId = await AsyncStorage.getItem('userId');
@@ -91,8 +95,9 @@ export default function AddVehicleScreen({ navigation }) {
         anio: parseInt(año),
         placa,
         combustible,
-        kilometraje: parseInt(kilometraje),
+        kilometraje: kmFinal,
         imagen: imagen || null,
+        unidad,
       });
       Alert.alert('¡Éxito!', 'Vehículo registrado correctamente', [
         { text: 'OK', onPress: () => navigation.goBack() }
@@ -244,20 +249,49 @@ export default function AddVehicleScreen({ navigation }) {
           ))}
         </View>
 
-        {/* Kilometraje */}
-        <Text style={[styles.label, { color: theme.textSecondary }]}>Kilometraje Actual</Text>
+        {/* Kilometraje / Millas */}
+        <Text style={[styles.label, { color: theme.textSecondary }]}>Recorrido Actual</Text>
+        <View style={styles.unidadRow}>
+          <TouchableOpacity
+            style={[styles.unidadBtn, {
+              backgroundColor: unidad === 'km' ? theme.primary : theme.card,
+              borderColor: unidad === 'km' ? theme.primary : theme.border
+            }]}
+            onPress={() => setUnidad('km')}
+          >
+            <MaterialIcons name="speed" size={16} color={unidad === 'km' ? '#fff' : theme.textSecondary} />
+            <Text style={[styles.unidadText, { color: unidad === 'km' ? '#fff' : theme.text }]}>Kilómetros</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.unidadBtn, {
+              backgroundColor: unidad === 'mi' ? theme.primary : theme.card,
+              borderColor: unidad === 'mi' ? theme.primary : theme.border
+            }]}
+            onPress={() => setUnidad('mi')}
+          >
+            <MaterialIcons name="speed" size={16} color={unidad === 'mi' ? '#fff' : theme.textSecondary} />
+            <Text style={[styles.unidadText, { color: unidad === 'mi' ? '#fff' : theme.text }]}>Millas</Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={[styles.inputContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <MaterialIcons name="speed" size={20} color={theme.textSecondary} style={styles.icon} />
           <TextInput
             style={[styles.input, { color: theme.text }]}
-            placeholder="Ej. 75000"
+            placeholder={unidad === 'km' ? 'Ej. 75000' : 'Ej. 46600'}
             placeholderTextColor={theme.textSecondary}
             value={kilometraje}
             onChangeText={setKilometraje}
             keyboardType="numeric"
           />
-          <Text style={[styles.kmLabel, { color: theme.textSecondary }]}>km</Text>
+          <Text style={[styles.kmLabel, { color: theme.textSecondary }]}>{unidad}</Text>
         </View>
+
+        {unidad === 'mi' && kilometraje ? (
+          <Text style={[styles.conversionText, { color: theme.textSecondary }]}>
+            ≈ {Math.round(parseInt(kilometraje) * 1.60934).toLocaleString()} km
+          </Text>
+        ) : null}
 
         {/* Botón */}
         <TouchableOpacity
@@ -302,6 +336,10 @@ const styles = StyleSheet.create({
   combustibleGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
   combustibleBtn: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1 },
   combustibleText: { fontSize: 13, fontWeight: '600' },
+  unidadRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
+  unidadBtn: { flex: 1, borderRadius: 10, padding: 10, alignItems: 'center', borderWidth: 1, flexDirection: 'row', justifyContent: 'center', gap: 6 },
+  unidadText: { fontSize: 13, fontWeight: '600' },
+  conversionText: { fontSize: 12, marginBottom: 12, marginLeft: 4, fontStyle: 'italic' },
   button: { borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 8 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 });

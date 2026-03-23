@@ -54,6 +54,13 @@ export default function SplashScreen({ navigation }) {
     // Navegar después de la animación
     const checkToken = async () => {
       await new Promise(resolve => setTimeout(resolve, 2800));
+      
+      const onboardingCompletado = await AsyncStorage.getItem('onboarding_completado');
+      if (!onboardingCompletado) {
+        navigation.replace('Onboarding');
+        return;
+      }
+    
       const token = await AsyncStorage.getItem('token');
       if (token) {
         navigation.replace('Main');

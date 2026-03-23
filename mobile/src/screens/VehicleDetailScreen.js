@@ -6,6 +6,7 @@ import {
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { getBrandColor } from '../theme/carBrands';
+import { formatRecorrido, convertirDeKm } from '../utils/unidades';
 import api from '../services/api';
 
 export default function VehicleDetailScreen({ navigation, route }) {
@@ -13,6 +14,7 @@ export default function VehicleDetailScreen({ navigation, route }) {
   const { theme } = useTheme();
   const [mantenimientos, setMantenimientos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const unidad = vehiculo.unidad || 'km';
 
   useEffect(() => {
     cargarMantenimientos();
@@ -65,7 +67,6 @@ export default function VehicleDetailScreen({ navigation, route }) {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
 
-        {/* Header con color de marca */}
         <View style={[styles.hero, { backgroundColor: getBrandColor(vehiculo.marca) }]}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -77,12 +78,13 @@ export default function VehicleDetailScreen({ navigation, route }) {
           <Text style={styles.heroSub}>{vehiculo.anio} • {vehiculo.placa}</Text>
         </View>
 
-        {/* Stats del vehículo */}
         <View style={styles.statsRow}>
           <View style={[styles.statCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <MaterialIcons name="speed" size={22} color={theme.primary} />
-            <Text style={[styles.statNumber, { color: theme.text }]}>{vehiculo.kilometraje}</Text>
-            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Km actuales</Text>
+            <Text style={[styles.statNumber, { color: theme.text }]}>
+              {formatRecorrido(vehiculo.kilometraje, unidad)}
+            </Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Recorrido actual</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <MaterialIcons name="build" size={22} color={theme.primary} />
@@ -98,7 +100,6 @@ export default function VehicleDetailScreen({ navigation, route }) {
           </View>
         </View>
 
-        {/* Info del vehículo */}
         <Text style={[styles.sectionTitle, { color: theme.text }]}>Información</Text>
         <View style={[styles.infoCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <View style={styles.infoRow}>
@@ -125,9 +126,13 @@ export default function VehicleDetailScreen({ navigation, route }) {
             <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Combustible</Text>
             <Text style={[styles.infoValue, { color: theme.text }]}>{vehiculo.combustible}</Text>
           </View>
+          <View style={[styles.infoDivider, { backgroundColor: theme.border }]} />
+          <View style={styles.infoRow}>
+            <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Unidad</Text>
+            <Text style={[styles.infoValue, { color: theme.text }]}>{unidad === 'mi' ? 'Millas' : 'Kilómetros'}</Text>
+          </View>
         </View>
 
-        {/* Historial de mantenimientos */}
         <View style={styles.sectionRow}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Historial</Text>
           <TouchableOpacity
@@ -159,7 +164,9 @@ export default function VehicleDetailScreen({ navigation, route }) {
                 <MaterialIcons name="calendar-today" size={13} color={theme.textSecondary} />
                 <Text style={[styles.mantDetalle, { color: theme.textSecondary }]}> {formatFecha(m.fecha)}</Text>
                 <MaterialIcons name="speed" size={13} color={theme.textSecondary} style={{ marginLeft: 12 }} />
-                <Text style={[styles.mantDetalle, { color: theme.textSecondary }]}> {m.kilometraje} km</Text>
+                <Text style={[styles.mantDetalle, { color: theme.textSecondary }]}>
+                  {' '}{m.kilometraje ? formatRecorrido(m.kilometraje, unidad) : '-'}
+                </Text>
               </View>
               {m.taller && (
                 <View style={styles.mantRow}>
@@ -197,7 +204,7 @@ const styles = StyleSheet.create({
   heroSub: { fontSize: 14, color: 'rgba(255,255,255,0.7)', marginTop: 4 },
   statsRow: { flexDirection: 'row', padding: 16, gap: 8 },
   statCard: { flex: 1, borderRadius: 12, padding: 12, alignItems: 'center', borderWidth: 1 },
-  statNumber: { fontSize: 16, fontWeight: 'bold', marginTop: 6 },
+  statNumber: { fontSize: 14, fontWeight: 'bold', marginTop: 6, textAlign: 'center' },
   statLabel: { fontSize: 11, marginTop: 2, textAlign: 'center' },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', paddingHorizontal: 24, marginTop: 8, marginBottom: 12 },
   sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, marginTop: 8, marginBottom: 12 },

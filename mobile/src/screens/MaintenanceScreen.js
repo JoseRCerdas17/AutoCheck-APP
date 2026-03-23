@@ -6,6 +6,7 @@ import {
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
+import { formatRecorrido, convertirDeKm } from '../utils/unidades';
 import api from '../services/api';
 
 export default function MaintenanceScreen({ navigation }) {
@@ -14,7 +15,6 @@ export default function MaintenanceScreen({ navigation }) {
   const [vehiculoSeleccionado, setVehiculoSeleccionado] = useState(null);
   const [mantenimientos, setMantenimientos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { colors } = useTheme();
 
   useEffect(() => {
     cargarVehiculos();
@@ -50,25 +50,20 @@ export default function MaintenanceScreen({ navigation }) {
   };
 
   const handleEliminar = (id) => {
-    Alert.alert(
-      'Eliminar mantenimiento',
-      '¿Estás seguro?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await api.delete(`/maintenance/${id}`);
-              setMantenimientos(mantenimientos.filter(m => m.id !== id));
-            } catch (error) {
-              Alert.alert('Error', 'No se pudo eliminar');
-            }
+    Alert.alert('Eliminar mantenimiento', '¿Estás seguro?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Eliminar', style: 'destructive',
+        onPress: async () => {
+          try {
+            await api.delete(`/maintenance/${id}`);
+            setMantenimientos(mantenimientos.filter(m => m.id !== id));
+          } catch (error) {
+            Alert.alert('Error', 'No se pudo eliminar');
           }
         }
-      ]
-    );
+      }
+    ]);
   };
 
   const formatFecha = (fecha) => {
@@ -82,6 +77,8 @@ export default function MaintenanceScreen({ navigation }) {
     if (!costo) return '-';
     return `₡${Number(costo).toLocaleString('es-CR')}`;
   };
+
+  const unidad = vehiculoSeleccionado?.unidad || 'km';
 
   const renderMantenimiento = ({ item }) => (
     <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
@@ -100,8 +97,10 @@ export default function MaintenanceScreen({ navigation }) {
 
       <View style={styles.cardRow}>
         <MaterialIcons name="speed" size={14} color={theme.textSecondary} />
-        <Text style={[styles.cardLabel, { color: theme.textSecondary }]}>Kilometraje:</Text>
-        <Text style={[styles.cardValue, { color: theme.text }]}>{item.kilometraje ? `${item.kilometraje} km` : '-'}</Text>
+        <Text style={[styles.cardLabel, { color: theme.textSecondary }]}>Recorrido:</Text>
+        <Text style={[styles.cardValue, { color: theme.text }]}>
+          {item.kilometraje ? formatRecorrido(item.kilometraje, unidad) : '-'}
+        </Text>
       </View>
 
       {item.taller && (
@@ -141,18 +140,16 @@ export default function MaintenanceScreen({ navigation }) {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
 
-      {/* Header */}
-<View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
-  <Text style={[styles.headerTitle, { color: theme.text }]}>Historial de Mantenimientos</Text>
-  <TouchableOpacity
-    style={[styles.addBtn, { backgroundColor: theme.primary }]}
-    onPress={() => navigation.navigate('AddMaintenance')}
-  >
-    <Ionicons name="add" size={20} color="#fff" />
-  </TouchableOpacity>
-</View>
+      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>Historial de Mantenimientos</Text>
+        <TouchableOpacity
+          style={[styles.addBtn, { backgroundColor: theme.primary }]}
+          onPress={() => navigation.navigate('AddMaintenance')}
+        >
+          <Ionicons name="add" size={20} color="#fff" />
+        </TouchableOpacity>
+      </View>
 
-      {/* Selector de vehículo */}
       {vehiculos.length > 1 && (
         <View style={styles.vehiculosScroll}>
           <FlatList
@@ -184,7 +181,6 @@ export default function MaintenanceScreen({ navigation }) {
         </View>
       )}
 
-      {/* Info del vehículo seleccionado */}
       {vehiculoSeleccionado && (
         <View style={[styles.vehiculoInfo, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <MaterialIcons name="directions-car" size={18} color={theme.primary} />
@@ -192,12 +188,11 @@ export default function MaintenanceScreen({ navigation }) {
             {vehiculoSeleccionado.marca} {vehiculoSeleccionado.modelo} {vehiculoSeleccionado.anio}
           </Text>
           <Text style={[styles.vehiculoPlaca, { color: theme.textSecondary }]}>
-            {vehiculoSeleccionado.placa}
+            {vehiculoSeleccionado.placa} • {formatRecorrido(vehiculoSeleccionado.kilometraje, unidad)}
           </Text>
         </View>
       )}
 
-      {/* Lista de mantenimientos */}
       {vehiculos.length === 0 ? (
         <View style={styles.emptyContainer}>
           <MaterialIcons name="directions-car" size={48} color={theme.textSecondary} />
@@ -236,6 +231,7 @@ const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingTop: 60, paddingBottom: 16, borderBottomWidth: 1 },
   headerTitle: { fontSize: 22, fontWeight: 'bold' },
+  addBtn: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
   vehiculosScroll: { maxHeight: 60 },
   vehiculoTab: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, marginRight: 8, borderWidth: 1 },
   vehiculoTabText: { fontSize: 13, fontWeight: '600' },
@@ -256,5 +252,4 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 15, marginTop: 12, marginBottom: 16, textAlign: 'center' },
   addButton: { borderRadius: 10, paddingHorizontal: 24, paddingVertical: 12 },
   addButtonText: { color: '#fff', fontWeight: 'bold' },
-  addBtn: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
 });

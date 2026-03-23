@@ -1,3 +1,4 @@
+import { formatRecorrido } from '../utils/unidades';
 import React, { useState } from 'react';
 import {
   View, Text, Modal, TouchableOpacity,
@@ -99,9 +100,8 @@ export default function KilometrajeModal({ visible, vehiculos, onClose }) {
                 {vehiculoSeleccionado?.marca} {vehiculoSeleccionado?.modelo} — {vehiculoSeleccionado?.placa}
               </Text>
               <Text style={[styles.kmActual, { color: theme.textSecondary }]}>
-                Kilometraje actual: <Text style={{ color: theme.accent }}>{vehiculoSeleccionado?.kilometraje} km</Text>
-              </Text>
-
+  Kilometraje actual: <Text style={{ color: theme.accent }}>{formatRecorrido(vehiculoSeleccionado?.kilometraje, vehiculoSeleccionado?.unidad)}</Text>
+</Text>
               <View style={[styles.inputContainer, { backgroundColor: theme.background, borderColor: theme.border }]}>
                 <MaterialIcons name="speed" size={20} color={theme.textSecondary} style={{ marginRight: 8 }} />
                 <TextInput

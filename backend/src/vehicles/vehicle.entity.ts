@@ -1,3 +1,5 @@
+
+
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { User } from '../users/user.entity';
 
@@ -30,4 +32,7 @@ export class Vehicle {
 
   @Column({ nullable: true })
   imagen: string;
+
+  @Column({ default: 'km' })
+  unidad: string;
 }
