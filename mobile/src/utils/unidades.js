@@ -56,6 +56,10 @@ export const calcularRecorridoDesde = (kmActual, kmServicio, unidad) => {
   return convertirDeKm(kmDesde, unidad);
 };
 
+
+
+
+
 // Generar alertas para un vehículo
 export const generarAlertas = (vehiculo, mantenimientos) => {
   const alertas = [];
@@ -140,5 +144,60 @@ export const generarAlertas = (vehiculo, mantenimientos) => {
     });
   }
 
+
+  
+
   return alertas;
+};
+
+
+// Calcular próximos mantenimientos recomendados
+export const calcularProximosMantenimientos = (vehiculo, mantenimientos) => {
+  const unidad = vehiculo.unidad || 'km';
+  const kmActual = vehiculo.kilometraje || 0;
+  const proximos = [];
+
+  const tiposAVerificar = [
+    { key: 'aceite', label: 'Cambio de Aceite', buscar: 'aceite' },
+    { key: 'frenos', label: 'Revisión de Frenos', buscar: 'freno' },
+    { key: 'llantas', label: 'Cambio de Llantas', buscar: 'llanta' },
+    { key: 'rotacion', label: 'Rotación de Llantas', buscar: 'rotacion' },
+    { key: 'filtroAire', label: 'Filtro de Aire', buscar: 'filtro' },
+    { key: 'bateria', label: 'Cambio de Batería', buscar: 'bateria' },
+  ];
+
+  for (const tipo of tiposAVerificar) {
+    const limite = LIMITES_MANTENIMIENTO[tipo.key][unidad];
+    const ultimoServicio = mantenimientos.find(m =>
+      m.tipo?.toLowerCase().includes(tipo.buscar)
+    );
+
+    let kmProximo;
+    let recorridoDesde = 0;
+
+    if (ultimoServicio) {
+      const kmUltimo = ultimoServicio.kilometraje || 0;
+      kmProximo = kmUltimo + (limite * (unidad === 'mi' ? MILLAS_A_KM : 1));
+      recorridoDesde = calcularRecorridoDesde(kmActual, kmUltimo, unidad);
+    } else {
+      kmProximo = limite * (unidad === 'mi' ? MILLAS_A_KM : 1);
+      recorridoDesde = convertirDeKm(kmActual, unidad);
+    }
+
+    const kmFaltantes = kmProximo - kmActual;
+    const recorridoFaltante = convertirDeKm(Math.max(kmFaltantes, 0), unidad);
+    const porcentaje = Math.min((recorridoDesde / limite) * 100, 100);
+
+    proximos.push({
+      tipo: tipo.label,
+      recorridoFaltante,
+      porcentaje,
+      unidad,
+      urgente: porcentaje >= 85,
+      vencido: porcentaje >= 100,
+    });
+  }
+
+  // Ordenar por porcentaje descendente
+  return proximos.sort((a, b) => b.porcentaje - a.porcentaje);
 };

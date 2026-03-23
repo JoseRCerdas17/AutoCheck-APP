@@ -1,4 +1,3 @@
-import { formatRecorrido } from '../utils/unidades';
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
@@ -8,6 +7,7 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
 import { getBrandColor } from '../theme/carBrands';
+import { generarAlertas, calcularProximosMantenimientos, formatRecorrido } from '../utils/unidades';
 import api from '../services/api';
 import KilometrajeModal from './KilometrajeModal';
 
@@ -16,6 +16,7 @@ export default function HomeScreen({ navigation }) {
   const [vehiculos, setVehiculos] = useState([]);
   const [resumen, setResumen] = useState(null);
   const [alertas, setAlertas] = useState([]);
+  const [proximosMantenimientos, setProximosMantenimientos] = useState([]);
   const [showKilometrajeModal, setShowKilometrajeModal] = useState(false);
   const { theme } = useTheme();
 
@@ -39,48 +40,15 @@ export default function HomeScreen({ navigation }) {
           const resumenRes = await api.get(`/maintenance/resumen/${id}`);
           setResumen(resumenRes.data);
 
+          // Calcular alertas y próximos mantenimientos
           let todasAlertas = [];
+          let todosMantenimientos = {};
+
           for (const v of res.data) {
             const resMant = await api.get(`/maintenance/${v.id}`);
-            const mantenimientos = resMant.data;
-            const nombreVehiculo = `${v.marca} ${v.modelo}`;
-
-            const cambioAceite = mantenimientos.find(m => m.tipo?.toLowerCase().includes('aceite'));
-            if (cambioAceite) {
-              const kmDesde = v.kilometraje - (cambioAceite.kilometraje || 0);
-              if (kmDesde >= 4000) {
-                todasAlertas.push({
-                  id: `aceite-${v.id}`,
-                  vehiculo: nombreVehiculo,
-                  tipo: 'Cambio de Aceite',
-                  mensaje: `${kmDesde} km desde el último cambio`,
-                  nivel: kmDesde >= 5000 ? 'alto' : 'medio',
-                });
-              }
-            } else if (v.kilometraje > 5000) {
-              todasAlertas.push({
-                id: `aceite-nuevo-${v.id}`,
-                vehiculo: nombreVehiculo,
-                tipo: 'Cambio de Aceite',
-                mensaje: 'Sin registro de cambio de aceite',
-                nivel: 'alto',
-              });
-            }
-
-            if (mantenimientos.length > 0 && mantenimientos[0].fecha) {
-              const diasDesde = Math.floor(
-                (new Date() - new Date(mantenimientos[0].fecha)) / (1000 * 60 * 60 * 24)
-              );
-              if (diasDesde >= 150) {
-                todasAlertas.push({
-                  id: `tiempo-${v.id}`,
-                  vehiculo: nombreVehiculo,
-                  tipo: 'Revisión General',
-                  mensaje: `Hace ${diasDesde} días sin mantenimiento`,
-                  nivel: diasDesde >= 180 ? 'alto' : 'medio',
-                });
-              }
-            }
+            todosMantenimientos[v.id] = resMant.data;
+            const alertasVehiculo = generarAlertas(v, resMant.data);
+            todasAlertas = [...todasAlertas, ...alertasVehiculo];
           }
 
           todasAlertas.sort((a, b) => {
@@ -88,6 +56,16 @@ export default function HomeScreen({ navigation }) {
             return orden[a.nivel] - orden[b.nivel];
           });
           setAlertas(todasAlertas.slice(0, 3));
+
+          // Próximos mantenimientos del primer vehículo
+          if (res.data.length > 0) {
+            const primerVehiculo = res.data[0];
+            const proximos = calcularProximosMantenimientos(
+              primerVehiculo,
+              todosMantenimientos[primerVehiculo.id] || []
+            );
+            setProximosMantenimientos(proximos.slice(0, 3));
+          }
 
         } catch (error) {
           console.log('Error cargando datos', error);
@@ -186,7 +164,11 @@ export default function HomeScreen({ navigation }) {
             {alertas.map((alerta) => (
               <View
                 key={alerta.id}
-                style={[styles.alertaCard, { backgroundColor: theme.card, borderColor: theme.border, borderLeftColor: getNivelColor(alerta.nivel) }]}
+                style={[styles.alertaCard, {
+                  backgroundColor: theme.card,
+                  borderColor: theme.border,
+                  borderLeftColor: getNivelColor(alerta.nivel)
+                }]}
               >
                 <View style={[styles.alertaDot, { backgroundColor: getNivelColor(alerta.nivel) }]} />
                 <View style={styles.alertaInfo}>
@@ -245,6 +227,49 @@ export default function HomeScreen({ navigation }) {
           </ScrollView>
         )}
 
+        {/* Próximos Mantenimientos */}
+        {proximosMantenimientos.length > 0 && (
+          <>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Próximos Mantenimientos</Text>
+            {proximosMantenimientos.map((m, i) => (
+              <View key={i} style={[styles.proximoCard, {
+                backgroundColor: theme.card,
+                borderColor: m.vencido ? '#FF5252' : m.urgente ? '#FF9800' : theme.border,
+                borderLeftColor: m.vencido ? '#FF5252' : m.urgente ? '#FF9800' : '#4CAF50',
+              }]}>
+                <View style={styles.proximoHeader}>
+                  <Text style={[styles.proximoTipo, { color: theme.text }]}>{m.tipo}</Text>
+                  {m.vencido ? (
+                    <View style={[styles.proximoBadge, { backgroundColor: '#FF525220' }]}>
+                      <Text style={[styles.proximoBadgeText, { color: '#FF5252' }]}>Vencido</Text>
+                    </View>
+                  ) : m.urgente ? (
+                    <View style={[styles.proximoBadge, { backgroundColor: '#FF980020' }]}>
+                      <Text style={[styles.proximoBadgeText, { color: '#FF9800' }]}>Pronto</Text>
+                    </View>
+                  ) : (
+                    <View style={[styles.proximoBadge, { backgroundColor: '#4CAF5020' }]}>
+                      <Text style={[styles.proximoBadgeText, { color: '#4CAF50' }]}>OK</Text>
+                    </View>
+                  )}
+                </View>
+                <View style={[styles.progressBar, { backgroundColor: theme.border }]}>
+                  <View style={[styles.progressFill, {
+                    width: `${m.porcentaje}%`,
+                    backgroundColor: m.vencido ? '#FF5252' : m.urgente ? '#FF9800' : '#4CAF50',
+                  }]} />
+                </View>
+                <Text style={[styles.proximoFaltante, { color: theme.textSecondary }]}>
+                  {m.vencido
+                    ? 'Mantenimiento vencido'
+                    : `Faltan ${m.recorridoFaltante.toLocaleString()} ${m.unidad}`
+                  }
+                </Text>
+              </View>
+            ))}
+          </>
+        )}
+
         {/* Resumen */}
         {resumen && (
           <>
@@ -277,47 +302,45 @@ export default function HomeScreen({ navigation }) {
         )}
 
         {/* Accesos Rápidos */}
-<Text style={[styles.sectionTitle, { color: theme.text }]}>Accesos Rápidos</Text>
-<View style={styles.quickAccessGrid}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Accesos Rápidos</Text>
+        <View style={styles.quickAccessGrid}>
+          <TouchableOpacity
+            style={[styles.quickAccessCard, { backgroundColor: '#5B2EE8' }]}
+            onPress={() => navigation.navigate('AddMaintenance')}
+          >
+            <MaterialIcons name="build" size={28} color="#fff" />
+            <Text style={styles.quickAccessCardText}>Agregar{'\n'}Mantenimiento</Text>
+          </TouchableOpacity>
 
-  <TouchableOpacity
-    style={[styles.quickAccessCard, { backgroundColor: '#5B2EE8' }]}
-    onPress={() => navigation.navigate('AddMaintenance')}
-  >
-    <MaterialIcons name="build" size={28} color="#fff" />
-    <Text style={styles.quickAccessCardText}>Agregar{'\n'}Mantenimiento</Text>
-  </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.quickAccessCard, { backgroundColor: '#FF5252' }]}
+            onPress={() => navigation.navigate('Alertas')}
+          >
+            <MaterialIcons name="notifications" size={28} color="#fff" />
+            <Text style={styles.quickAccessCardText}>Ver{'\n'}Alertas</Text>
+            {alertas.length > 0 && (
+              <View style={styles.quickAccessBadge}>
+                <Text style={styles.quickAccessBadgeText}>{alertas.length}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
 
-  <TouchableOpacity
-    style={[styles.quickAccessCard, { backgroundColor: '#FF5252' }]}
-    onPress={() => navigation.navigate('Alertas')}
-  >
-    <MaterialIcons name="notifications" size={28} color="#fff" />
-    <Text style={styles.quickAccessCardText}>Ver{'\n'}Alertas</Text>
-    {alertas.length > 0 && (
-      <View style={styles.quickAccessBadge}>
-        <Text style={styles.quickAccessBadgeText}>{alertas.length}</Text>
-      </View>
-    )}
-  </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.quickAccessCard, { backgroundColor: '#29B6F6' }]}
+            onPress={() => navigation.navigate('Reportes')}
+          >
+            <MaterialIcons name="bar-chart" size={28} color="#fff" />
+            <Text style={styles.quickAccessCardText}>Ver{'\n'}Reportes</Text>
+          </TouchableOpacity>
 
-  <TouchableOpacity
-    style={[styles.quickAccessCard, { backgroundColor: '#29B6F6' }]}
-    onPress={() => navigation.navigate('Reportes')}
-  >
-    <MaterialIcons name="bar-chart" size={28} color="#fff" />
-    <Text style={styles.quickAccessCardText}>Ver{'\n'}Reportes</Text>
-  </TouchableOpacity>
-
-  <TouchableOpacity
-    style={[styles.quickAccessCard, { backgroundColor: '#4CAF50' }]}
-    onPress={() => navigation.navigate('Documentos')}
-  >
-    <MaterialIcons name="folder" size={28} color="#fff" />
-    <Text style={styles.quickAccessCardText}>Mis{'\n'}Documentos</Text>
-  </TouchableOpacity>
-
-</View>
+          <TouchableOpacity
+            style={[styles.quickAccessCard, { backgroundColor: '#4CAF50' }]}
+            onPress={() => navigation.navigate('Documentos')}
+          >
+            <MaterialIcons name="folder" size={28} color="#fff" />
+            <Text style={styles.quickAccessCardText}>Mis{'\n'}Documentos</Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={{ height: 32 }} />
       </ScrollView>
@@ -361,6 +384,14 @@ const styles = StyleSheet.create({
   vehicleKm: { fontSize: 13, marginTop: 4 },
   deleteButton: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, margin: 12, marginTop: 0 },
   deleteText: { fontSize: 13, marginLeft: 4 },
+  proximoCard: { marginHorizontal: 24, marginBottom: 10, borderRadius: 12, padding: 14, borderWidth: 1, borderLeftWidth: 4 },
+  proximoHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  proximoTipo: { fontSize: 14, fontWeight: 'bold', flex: 1 },
+  proximoBadge: { borderRadius: 10, paddingHorizontal: 10, paddingVertical: 3 },
+  proximoBadgeText: { fontSize: 11, fontWeight: 'bold' },
+  progressBar: { height: 6, borderRadius: 3, marginBottom: 6, overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 3 },
+  proximoFaltante: { fontSize: 12 },
   statsGrid: { flexDirection: 'row', paddingHorizontal: 16, gap: 12, marginBottom: 8 },
   statCard: { flex: 1, borderRadius: 16, padding: 16, alignItems: 'center', borderWidth: 1 },
   statNumber: { fontSize: 18, fontWeight: 'bold', marginTop: 8 },
@@ -370,8 +401,8 @@ const styles = StyleSheet.create({
   ultimoTipo: { fontSize: 16, fontWeight: 'bold' },
   ultimoDetalle: { fontSize: 13, marginTop: 4 },
   quickAccessGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, gap: 12, marginBottom: 32 },
-quickAccessCard: { width: '46%', borderRadius: 20, padding: 20, justifyContent: 'space-between', minHeight: 110 },
-quickAccessCardText: { color: '#fff', fontSize: 14, fontWeight: 'bold', marginTop: 12 },
-quickAccessBadge: { position: 'absolute', top: 12, right: 12, backgroundColor: '#fff', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2 },
-quickAccessBadgeText: { color: '#FF5252', fontSize: 11, fontWeight: 'bold' },
+  quickAccessCard: { width: '46%', borderRadius: 20, padding: 20, justifyContent: 'space-between', minHeight: 110 },
+  quickAccessCardText: { color: '#fff', fontSize: 14, fontWeight: 'bold', marginTop: 12 },
+  quickAccessBadge: { position: 'absolute', top: 12, right: 12, backgroundColor: '#fff', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2 },
+  quickAccessBadgeText: { color: '#FF5252', fontSize: 11, fontWeight: 'bold' },
 });
