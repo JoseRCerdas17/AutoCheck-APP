@@ -1,12 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  ActivityIndicator, Dimensions
+  ActivityIndicator, Dimensions, TouchableOpacity, Alert
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BarChart, PieChart } from 'react-native-chart-kit';
+import ViewShot from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
 import { useTheme } from '../context/ThemeContext';
+import { formatRecorrido } from '../utils/unidades';
 import api from '../services/api';
 
 const screenWidth = Dimensions.get('window').width;
@@ -16,6 +19,7 @@ export default function ReportsScreen() {
   const [loading, setLoading] = useState(true);
   const [mantenimientos, setMantenimientos] = useState([]);
   const [vehiculos, setVehiculos] = useState([]);
+  const viewShotRef = useRef(null);
 
   useEffect(() => {
     cargarDatos();
@@ -30,7 +34,11 @@ export default function ReportsScreen() {
       let todos = [];
       for (const v of resVehiculos.data) {
         const resMant = await api.get(`/maintenance/${v.id}`);
-        todos = [...todos, ...resMant.data.map(m => ({ ...m, vehiculo: `${v.marca} ${v.modelo}` }))];
+        todos = [...todos, ...resMant.data.map(m => ({
+          ...m,
+          vehiculo: `${v.marca} ${v.modelo}`,
+          unidad: v.unidad || 'km',
+        }))];
       }
       setMantenimientos(todos);
     } catch (error) {
@@ -40,7 +48,18 @@ export default function ReportsScreen() {
     }
   };
 
-  // Gastos por mes (últimos 6 meses)
+  const handleCompartir = async () => {
+    try {
+      const uri = await viewShotRef.current.capture();
+      await Sharing.shareAsync(uri, {
+        mimeType: 'image/png',
+        dialogTitle: 'Compartir reporte AutoCheck',
+      });
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo compartir el reporte');
+    }
+  };
+
   const getGastosPorMes = () => {
     const meses = [];
     const hoy = new Date();
@@ -59,7 +78,6 @@ export default function ReportsScreen() {
     return meses;
   };
 
-  // Gastos por tipo de mantenimiento
   const getGastosPorTipo = () => {
     const tipos = {};
     mantenimientos.forEach(m => {
@@ -76,7 +94,6 @@ export default function ReportsScreen() {
     }));
   };
 
-  // Gastos por vehículo
   const getGastosPorVehiculo = () => {
     const vehiculosGastos = {};
     mantenimientos.forEach(m => {
@@ -99,7 +116,6 @@ export default function ReportsScreen() {
     color: (opacity = 1) => `rgba(91, 46, 232, ${opacity})`,
     labelColor: () => theme.textSecondary,
     style: { borderRadius: 16 },
-    propsForDots: { r: '6', strokeWidth: '2', stroke: theme.primary },
   };
 
   if (loading) {
@@ -113,92 +129,102 @@ export default function ReportsScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
+        <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 0.9 }}>
+          <View style={{ backgroundColor: theme.background }}>
 
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: theme.text }]}>Reportes</Text>
-          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-            Análisis de tus gastos
-          </Text>
-        </View>
+            {/* Header */}
+            <View style={styles.header}>
+              <View>
+                <Text style={[styles.title, { color: theme.text }]}>Reportes</Text>
+                <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Análisis de tus gastos</Text>
+              </View>
+              <TouchableOpacity
+                style={[styles.shareBtn, { backgroundColor: theme.primary }]}
+                onPress={handleCompartir}
+              >
+                <MaterialIcons name="share" size={20} color="#fff" />
+              </TouchableOpacity>
+            </View>
 
-        {/* Total general */}
-        <View style={[styles.totalCard, { backgroundColor: theme.primary }]}>
-          <MaterialIcons name="attach-money" size={32} color="#fff" />
-          <Text style={styles.totalLabel}>Total Gastado</Text>
-          <Text style={styles.totalAmount}>
-            ₡{totalGastado.toLocaleString('es-CR')}
-          </Text>
-          <Text style={styles.totalSub}>{mantenimientos.length} mantenimientos registrados</Text>
-        </View>
+            {/* Total general */}
+            <View style={[styles.totalCard, { backgroundColor: theme.primary }]}>
+              <MaterialIcons name="attach-money" size={32} color="#fff" />
+              <Text style={styles.totalLabel}>Total Gastado</Text>
+              <Text style={styles.totalAmount}>
+                ₡{totalGastado.toLocaleString('es-CR')}
+              </Text>
+              <Text style={styles.totalSub}>{mantenimientos.length} mantenimientos registrados</Text>
+            </View>
 
-        {/* Gastos por vehículo */}
-        {gastosVehiculo.length > 0 && (
-          <>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Gastos por Vehículo</Text>
-            {gastosVehiculo.map(([nombre, total], i) => (
-              <View key={i} style={[styles.vehiculoRow, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                <View style={[styles.vehiculoIcon, { backgroundColor: theme.primary + '20' }]}>
-                  <MaterialIcons name="directions-car" size={20} color={theme.primary} />
+            {/* Gastos por vehículo */}
+            {gastosVehiculo.length > 0 && (
+              <>
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>Gastos por Vehículo</Text>
+                {gastosVehiculo.map(([nombre, total], i) => (
+                  <View key={i} style={[styles.vehiculoRow, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                    <View style={[styles.vehiculoIcon, { backgroundColor: theme.primary + '20' }]}>
+                      <MaterialIcons name="directions-car" size={20} color={theme.primary} />
+                    </View>
+                    <Text style={[styles.vehiculoNombre, { color: theme.text }]}>{nombre}</Text>
+                    <Text style={[styles.vehiculoTotal, { color: theme.primary }]}>
+                      ₡{Number(total).toLocaleString('es-CR')}
+                    </Text>
+                  </View>
+                ))}
+              </>
+            )}
+
+            {/* Gráfica de barras */}
+            {mantenimientos.length > 0 && (
+              <>
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>Gastos por Mes</Text>
+                <View style={[styles.chartCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                  <BarChart
+                    data={{
+                      labels: gastosMes.map(m => m.label),
+                      datasets: [{ data: gastosMes.map(m => m.total || 0) }],
+                    }}
+                    width={screenWidth - 64}
+                    height={200}
+                    chartConfig={chartConfig}
+                    style={styles.chart}
+                    showValuesOnTopOfBars
+                    fromZero
+                  />
                 </View>
-                <Text style={[styles.vehiculoNombre, { color: theme.text }]}>{nombre}</Text>
-                <Text style={[styles.vehiculoTotal, { color: theme.primary }]}>
-                  ₡{Number(total).toLocaleString('es-CR')}
+              </>
+            )}
+
+            {/* Gráfica de pie */}
+            {gastosTipo.length > 0 && (
+              <>
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>Gastos por Tipo</Text>
+                <View style={[styles.chartCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                  <PieChart
+                    data={gastosTipo}
+                    width={screenWidth - 64}
+                    height={200}
+                    chartConfig={chartConfig}
+                    accessor="value"
+                    backgroundColor="transparent"
+                    paddingLeft="15"
+                  />
+                </View>
+              </>
+            )}
+
+            {mantenimientos.length === 0 && (
+              <View style={styles.emptyContainer}>
+                <MaterialIcons name="bar-chart" size={64} color={theme.textSecondary} />
+                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+                  No hay datos para mostrar.{'\n'}Registrá mantenimientos para ver reportes.
                 </Text>
               </View>
-            ))}
-          </>
-        )}
+            )}
 
-        {/* Gráfica de barras - gastos por mes */}
-        {mantenimientos.length > 0 && (
-          <>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Gastos por Mes</Text>
-            <View style={[styles.chartCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-              <BarChart
-                data={{
-                  labels: gastosMes.map(m => m.label),
-                  datasets: [{ data: gastosMes.map(m => m.total || 0) }],
-                }}
-                width={screenWidth - 64}
-                height={200}
-                chartConfig={chartConfig}
-                style={styles.chart}
-                showValuesOnTopOfBars
-                fromZero
-              />
-            </View>
-          </>
-        )}
-
-        {/* Gráfica de pie - gastos por tipo */}
-        {gastosTipo.length > 0 && (
-          <>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Gastos por Tipo</Text>
-            <View style={[styles.chartCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-              <PieChart
-                data={gastosTipo}
-                width={screenWidth - 64}
-                height={200}
-                chartConfig={chartConfig}
-                accessor="value"
-                backgroundColor="transparent"
-                paddingLeft="15"
-              />
-            </View>
-          </>
-        )}
-
-        {mantenimientos.length === 0 && (
-          <View style={styles.emptyContainer}>
-            <MaterialIcons name="bar-chart" size={64} color={theme.textSecondary} />
-            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-              No hay datos para mostrar.{'\n'}Registrá mantenimientos para ver reportes.
-            </Text>
+            <View style={{ height: 32 }} />
           </View>
-        )}
-
-        <View style={{ height: 32 }} />
+        </ViewShot>
       </ScrollView>
     </View>
   );
@@ -207,9 +233,10 @@ export default function ReportsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { paddingHorizontal: 24, paddingTop: 60, paddingBottom: 16 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingTop: 60, paddingBottom: 16 },
   title: { fontSize: 24, fontWeight: 'bold' },
   subtitle: { fontSize: 14, marginTop: 4 },
+  shareBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
   totalCard: { marginHorizontal: 24, borderRadius: 20, padding: 24, alignItems: 'center', marginBottom: 8 },
   totalLabel: { color: 'rgba(255,255,255,0.8)', fontSize: 14, marginTop: 8 },
   totalAmount: { color: '#fff', fontSize: 32, fontWeight: 'bold', marginTop: 4 },
