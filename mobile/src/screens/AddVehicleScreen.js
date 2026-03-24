@@ -1,313 +1,260 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, Alert, ActivityIndicator, ScrollView, Image, Animated
+  StyleSheet, Alert, ActivityIndicator, ScrollView,
+  KeyboardAvoidingView, Platform
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
-import { getBrandColor } from '../theme/carBrands';
+import { convertirAKm, formatRecorrido } from '../utils/unidades';
 import api from '../services/api';
 
-const MARCAS = ['Toyota', 'Honda', 'Nissan', 'Hyundai', 'Kia', 'Mazda', 'Ford', 'Chevrolet', 'Volkswagen', 'Suzuki', 'Mitsubishi', 'Subaru', 'BMW', 'Mercedes', 'Otra'];
-const COMBUSTIBLES = ['Gasolina', 'Diesel', 'Híbrido', 'Eléctrico', 'GLP'];
-
-export default function AddVehicleScreen({ navigation }) {
-  const [marca, setMarca] = useState('');
-  const [marcaCustom, setMarcaCustom] = useState('');
-  const [modelo, setModelo] = useState('');
-  const [año, setAño] = useState('');
-  const [placa, setPlaca] = useState('');
-  const [combustible, setCombustible] = useState('');
-  const [kilometraje, setKilometraje] = useState('');
-  const [unidad, setUnidad] = useState('km');
-  const [imagen, setImagen] = useState(null);
-  const [loading, setLoading] = useState(false);
+export default function AddMaintenanceScreen({ navigation, route }) {
   const { theme } = useTheme();
+  const scrollRef = useRef(null);
+  const [vehiculos, setVehiculos] = useState([]);
+  const [vehiculoSeleccionado, setVehiculoSeleccionado] = useState(null);
+  const [vehiculoId, setVehiculoId] = useState(route?.params?.vehiculoId || null);
+  const [tipo, setTipo] = useState('');
+  const [fecha, setFecha] = useState('');
+  const [recorrido, setRecorrido] = useState('');
+  const [costo, setCosto] = useState('');
+  const [taller, setTaller] = useState('');
+  const [notas, setNotas] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const formAnim = useRef(new Animated.Value(0)).current;
+  const tiposMantenimiento = [
+    'Cambio de aceite',
+    'Revisión de frenos',
+    'Cambio de llantas',
+    'Alineación y balanceo',
+    'Cambio de filtro de aire',
+    'Revisión general',
+    'Cambio de batería',
+    'Otro',
+  ];
 
   useEffect(() => {
-    Animated.timing(formAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
+    cargarVehiculos();
   }, []);
 
-  const marcaFinal = marca === 'Otra' ? marcaCustom : marca;
-
-  const pickImage = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert('Permiso requerido', 'Necesitamos acceso a tu galería.');
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [16, 9],
-      quality: 0.5,
-      base64: true,
-    });
-    if (!result.canceled) {
-      setImagen(`data:image/jpeg;base64,${result.assets[0].base64}`);
+  const cargarVehiculos = async () => {
+    try {
+      const id = await AsyncStorage.getItem('userId');
+      const res = await api.get(`/vehicles/${id}`);
+      setVehiculos(res.data);
+      if (res.data.length > 0) {
+        const inicial = route?.params?.vehiculoId
+          ? res.data.find(v => v.id === route.params.vehiculoId) || res.data[0]
+          : res.data[0];
+        setVehiculoId(inicial.id);
+        setVehiculoSeleccionado(inicial);
+      }
+    } catch (error) {
+      console.log('Error cargando vehículos', error);
     }
   };
 
-  const takePhoto = async () => {
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert('Permiso requerido', 'Necesitamos acceso a tu cámara.');
-      return;
-    }
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [16, 9],
-      quality: 0.5,
-      base64: true,
-    });
-    if (!result.canceled) {
-      setImagen(`data:image/jpeg;base64,${result.assets[0].base64}`);
-    }
+  const handleSeleccionarVehiculo = (v) => {
+    setVehiculoId(v.id);
+    setVehiculoSeleccionado(v);
+    setRecorrido('');
   };
 
-  const handleImageOptions = () => {
-    Alert.alert('Foto del vehículo', '¿Cómo querés agregar la foto?', [
-      { text: 'Tomar foto', onPress: takePhoto },
-      { text: 'Elegir de galería', onPress: pickImage },
-      { text: 'Cancelar', style: 'cancel' },
-    ]);
-  };
+  const unidad = vehiculoSeleccionado?.unidad || 'km';
 
-  const handleSave = async () => {
-    if (!marcaFinal || !modelo || !año || !placa || !combustible || !kilometraje) {
-      Alert.alert('Error', 'Por favor completá todos los campos');
+  const handleGuardar = async () => {
+    if (!tipo || !vehiculoId) {
+      Alert.alert('Error', 'El tipo de mantenimiento y el vehículo son obligatorios');
       return;
     }
-    const kmFinal = unidad === 'mi'
-      ? Math.round(parseInt(kilometraje) * 1.60934)
-      : parseInt(kilometraje);
-
+    const kmGuardar = recorrido ? convertirAKm(recorrido, unidad) : undefined;
     setLoading(true);
     try {
-      const userId = await AsyncStorage.getItem('userId');
-      await api.post(`/vehicles/${userId}`, {
-        marca: marcaFinal,
-        modelo,
-        anio: parseInt(año),
-        placa,
-        combustible,
-        kilometraje: kmFinal,
-        imagen: imagen || null,
-        unidad,
+      await api.post('/maintenance', {
+        vehiculoId,
+        tipo,
+        fecha: fecha || undefined,
+        kilometraje: kmGuardar,
+        costo: costo ? parseFloat(costo) : undefined,
+        taller: taller || undefined,
+        notas: notas || undefined,
       });
-      Alert.alert('¡Éxito!', 'Vehículo registrado correctamente', [
+      Alert.alert('¡Éxito!', 'Mantenimiento registrado correctamente', [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
     } catch (error) {
-      Alert.alert('Error', 'No se pudo registrar el vehículo');
+      Alert.alert('Error', 'No se pudo registrar el mantenimiento');
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <ScrollView contentContainerStyle={styles.inner} showsVerticalScrollIndicator={false}>
+  const handleFocus = () => {
+    setTimeout(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    }, 300);
+  };
 
-        {/* Header */}
+  return (
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: theme.background }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.inner}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}
+      >
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={theme.text} />
-          <Text style={[styles.backText, { color: theme.text }]}>Registrar Vehículo</Text>
+          <Text style={[styles.backText, { color: theme.text }]}>Registrar Mantenimiento</Text>
         </TouchableOpacity>
 
-        {/* Imagen */}
-        <TouchableOpacity
-          style={[styles.imageContainer, {
-            backgroundColor: marcaFinal ? getBrandColor(marcaFinal) + '30' : theme.card,
-            borderColor: marcaFinal ? getBrandColor(marcaFinal) : theme.border
-          }]}
-          onPress={handleImageOptions}
-        >
-          {imagen ? (
-            <Image source={{ uri: imagen }} style={styles.vehicleImage} resizeMode="cover" />
-          ) : (
-            <View style={styles.imagePlaceholder}>
-              {marcaFinal ? (
-                <View style={[styles.brandCircle, { backgroundColor: getBrandColor(marcaFinal) }]}>
-                  <Text style={styles.brandInitial}>
-                    {marcaFinal.charAt(0).toUpperCase()}
-                  </Text>
-                </View>
-              ) : (
-                <MaterialIcons name="directions-car" size={48} color={theme.textSecondary} />
-              )}
-              <Text style={[styles.imagePlaceholderText, { color: theme.textSecondary }]}>
-                {marcaFinal ? `${marcaFinal} — Toca para agregar foto` : 'Toca para agregar una foto'}
-              </Text>
-            </View>
-          )}
-          <View style={[styles.imageEditButton, { backgroundColor: theme.primary }]}>
-            <Ionicons name="camera" size={16} color="#fff" />
-          </View>
-        </TouchableOpacity>
-
-        {/* Selector de marca */}
-        <Text style={[styles.label, { color: theme.textSecondary }]}>Marca del Vehículo</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.marcasContainer}>
-          {MARCAS.map((m) => (
+        {/* Selector de vehículo */}
+        <Text style={[styles.label, { color: theme.textSecondary }]}>Vehículo</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.vehiculosContainer} keyboardShouldPersistTaps="handled">
+          {vehiculos.map((v) => (
             <TouchableOpacity
-              key={m}
-              style={[
-                styles.marcaTab,
-                {
-                  backgroundColor: marca === m ? getBrandColor(m) : theme.card,
-                  borderColor: marca === m ? getBrandColor(m) : theme.border
-                }
-              ]}
-              onPress={() => setMarca(m)}
+              key={v.id}
+              style={[styles.vehiculoTab, {
+                backgroundColor: vehiculoId === v.id ? theme.primary : theme.card,
+                borderColor: theme.border
+              }]}
+              onPress={() => handleSeleccionarVehiculo(v)}
             >
-              <Text style={[styles.marcaTabText, { color: marca === m ? '#fff' : theme.text }]}>{m}</Text>
+              <Text style={[styles.vehiculoTabText, { color: vehiculoId === v.id ? '#fff' : theme.text }]}>
+                {v.marca} {v.modelo}
+              </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
 
-        {marca === 'Otra' && (
-          <View style={[styles.inputContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            <MaterialIcons name="directions-car" size={20} color={theme.textSecondary} style={styles.icon} />
-            <TextInput
-              style={[styles.input, { color: theme.text }]}
-              placeholder="Escribí la marca"
-              placeholderTextColor={theme.textSecondary}
-              value={marcaCustom}
-              onChangeText={setMarcaCustom}
-            />
+        {/* Info del vehículo */}
+        {vehiculoSeleccionado && (
+          <View style={[styles.vehiculoInfo, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <MaterialIcons name="speed" size={16} color={theme.primary} />
+            <Text style={[styles.vehiculoInfoText, { color: theme.textSecondary }]}>
+              Recorrido actual: <Text style={{ color: theme.accent, fontWeight: 'bold' }}>
+                {formatRecorrido(vehiculoSeleccionado.kilometraje, unidad)}
+              </Text>
+            </Text>
           </View>
         )}
 
-        {/* Modelo */}
-        <Text style={[styles.label, { color: theme.textSecondary }]}>Modelo</Text>
+        {/* Tipo */}
+        <Text style={[styles.label, { color: theme.textSecondary }]}>Tipo de Mantenimiento *</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tiposContainer} keyboardShouldPersistTaps="handled">
+          {tiposMantenimiento.map((t) => (
+            <TouchableOpacity
+              key={t}
+              style={[styles.tipoTab, {
+                backgroundColor: tipo === t ? theme.primary : theme.card,
+                borderColor: theme.border
+              }]}
+              onPress={() => setTipo(t)}
+            >
+              <Text style={[styles.tipoTabText, { color: tipo === t ? '#fff' : theme.text }]}>{t}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* Fecha */}
+        <Text style={[styles.label, { color: theme.textSecondary }]}>Fecha</Text>
         <View style={[styles.inputContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
-          <MaterialIcons name="directions-car" size={20} color={theme.textSecondary} style={styles.icon} />
+          <MaterialIcons name="calendar-today" size={20} color={theme.textSecondary} style={styles.icon} />
           <TextInput
             style={[styles.input, { color: theme.text }]}
-            placeholder="Ej. Corolla"
+            placeholder="YYYY-MM-DD (ej. 2026-03-19)"
             placeholderTextColor={theme.textSecondary}
-            value={modelo}
-            onChangeText={setModelo}
+            value={fecha}
+            onChangeText={setFecha}
+            onFocus={handleFocus}
           />
         </View>
 
-        {/* Año y Placa en fila */}
-        <View style={styles.row}>
-          <View style={styles.rowItem}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>Año</Text>
-            <View style={[styles.inputContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
-              <MaterialIcons name="calendar-today" size={20} color={theme.textSecondary} style={styles.icon} />
-              <TextInput
-                style={[styles.input, { color: theme.text }]}
-                placeholder="2020"
-                placeholderTextColor={theme.textSecondary}
-                value={año}
-                onChangeText={setAño}
-                keyboardType="numeric"
-                maxLength={4}
-              />
-            </View>
-          </View>
-          <View style={styles.rowItem}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>Placa</Text>
-            <View style={[styles.inputContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
-              <MaterialIcons name="credit-card" size={20} color={theme.textSecondary} style={styles.icon} />
-              <TextInput
-                style={[styles.input, { color: theme.text }]}
-                placeholder="ABC 123"
-                placeholderTextColor={theme.textSecondary}
-                value={placa}
-                onChangeText={setPlaca}
-                autoCapitalize="characters"
-              />
-            </View>
-          </View>
-        </View>
-
-        {/* Combustible */}
-        <Text style={[styles.label, { color: theme.textSecondary }]}>Combustible</Text>
-        <View style={styles.combustibleGrid}>
-          {COMBUSTIBLES.map((c) => (
-            <TouchableOpacity
-              key={c}
-              style={[
-                styles.combustibleBtn,
-                {
-                  backgroundColor: combustible === c ? theme.primary : theme.card,
-                  borderColor: combustible === c ? theme.primary : theme.border
-                }
-              ]}
-              onPress={() => setCombustible(c)}
-            >
-              <Text style={[styles.combustibleText, { color: combustible === c ? '#fff' : theme.text }]}>{c}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Kilometraje / Millas */}
-        <Text style={[styles.label, { color: theme.textSecondary }]}>Recorrido Actual</Text>
-        <View style={styles.unidadRow}>
-          <TouchableOpacity
-            style={[styles.unidadBtn, {
-              backgroundColor: unidad === 'km' ? theme.primary : theme.card,
-              borderColor: unidad === 'km' ? theme.primary : theme.border
-            }]}
-            onPress={() => setUnidad('km')}
-          >
-            <MaterialIcons name="speed" size={16} color={unidad === 'km' ? '#fff' : theme.textSecondary} />
-            <Text style={[styles.unidadText, { color: unidad === 'km' ? '#fff' : theme.text }]}>Kilómetros</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.unidadBtn, {
-              backgroundColor: unidad === 'mi' ? theme.primary : theme.card,
-              borderColor: unidad === 'mi' ? theme.primary : theme.border
-            }]}
-            onPress={() => setUnidad('mi')}
-          >
-            <MaterialIcons name="speed" size={16} color={unidad === 'mi' ? '#fff' : theme.textSecondary} />
-            <Text style={[styles.unidadText, { color: unidad === 'mi' ? '#fff' : theme.text }]}>Millas</Text>
-          </TouchableOpacity>
-        </View>
-
+        {/* Recorrido */}
+        <Text style={[styles.label, { color: theme.textSecondary }]}>
+          Recorrido al momento del servicio ({unidad})
+        </Text>
         <View style={[styles.inputContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <MaterialIcons name="speed" size={20} color={theme.textSecondary} style={styles.icon} />
           <TextInput
             style={[styles.input, { color: theme.text }]}
-            placeholder={unidad === 'km' ? 'Ej. 75000' : 'Ej. 46600'}
+            placeholder={unidad === 'mi' ? 'Ej. 31000' : 'Ej. 50000'}
             placeholderTextColor={theme.textSecondary}
-            value={kilometraje}
-            onChangeText={setKilometraje}
+            value={recorrido}
+            onChangeText={setRecorrido}
             keyboardType="numeric"
+            onFocus={handleFocus}
           />
-          <Text style={[styles.kmLabel, { color: theme.textSecondary }]}>{unidad}</Text>
+          <Text style={[styles.unidadLabel, { color: theme.textSecondary }]}>{unidad}</Text>
         </View>
-
-        {unidad === 'mi' && kilometraje ? (
+        {unidad === 'mi' && recorrido ? (
           <Text style={[styles.conversionText, { color: theme.textSecondary }]}>
-            ≈ {Math.round(parseInt(kilometraje) * 1.60934).toLocaleString()} km
+            ≈ {convertirAKm(recorrido, 'mi').toLocaleString()} km
           </Text>
         ) : null}
 
-        {/* Botón */}
+        {/* Costo */}
+        <Text style={[styles.label, { color: theme.textSecondary }]}>Costo (₡)</Text>
+        <View style={[styles.inputContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <MaterialIcons name="attach-money" size={20} color={theme.textSecondary} style={styles.icon} />
+          <TextInput
+            style={[styles.input, { color: theme.text }]}
+            placeholder="Ej. 25000"
+            placeholderTextColor={theme.textSecondary}
+            value={costo}
+            onChangeText={setCosto}
+            keyboardType="numeric"
+            onFocus={handleFocus}
+          />
+        </View>
+
+        {/* Taller */}
+        <Text style={[styles.label, { color: theme.textSecondary }]}>Taller</Text>
+        <View style={[styles.inputContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <MaterialIcons name="build" size={20} color={theme.textSecondary} style={styles.icon} />
+          <TextInput
+            style={[styles.input, { color: theme.text }]}
+            placeholder="Nombre del taller"
+            placeholderTextColor={theme.textSecondary}
+            value={taller}
+            onChangeText={setTaller}
+            onFocus={handleFocus}
+          />
+        </View>
+
+        {/* Notas */}
+        <Text style={[styles.label, { color: theme.textSecondary }]}>Notas</Text>
+        <View style={[styles.inputContainerMulti, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <TextInput
+            style={[styles.inputMulti, { color: theme.text }]}
+            placeholder="Observaciones adicionales..."
+            placeholderTextColor={theme.textSecondary}
+            value={notas}
+            onChangeText={setNotas}
+            multiline
+            numberOfLines={3}
+            onFocus={handleFocus}
+          />
+        </View>
+
         <TouchableOpacity
           style={[styles.button, { backgroundColor: theme.primary }]}
-          onPress={handleSave}
+          onPress={handleGuardar}
           disabled={loading}
         >
-          {loading
-            ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.buttonText}>Guardar Vehículo</Text>
-          }
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Guardar Mantenimiento</Text>}
         </TouchableOpacity>
 
-        <View style={{ height: 32 }} />
+        <View style={{ height: 80 }} />
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -316,30 +263,22 @@ const styles = StyleSheet.create({
   inner: { padding: 24, paddingTop: 60 },
   backButton: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
   backText: { fontSize: 20, fontWeight: 'bold', marginLeft: 8 },
-  imageContainer: { borderRadius: 16, borderWidth: 1, marginBottom: 24, overflow: 'hidden', height: 180, justifyContent: 'center', alignItems: 'center' },
-  vehicleImage: { width: '100%', height: '100%' },
-  imagePlaceholder: { alignItems: 'center' },
-  brandCircle: { width: 70, height: 70, borderRadius: 35, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
-  brandInitial: { fontSize: 32, fontWeight: 'bold', color: '#fff' },
-  imagePlaceholderText: { fontSize: 13, marginTop: 8, textAlign: 'center', paddingHorizontal: 16 },
-  imageEditButton: { position: 'absolute', bottom: 12, right: 12, width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
-  label: { fontSize: 13, fontWeight: '600', marginBottom: 8 },
-  marcasContainer: { maxHeight: 50, marginBottom: 16 },
-  marcaTab: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, marginRight: 8, borderWidth: 1 },
-  marcaTabText: { fontSize: 13, fontWeight: '600' },
-  inputContainer: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, marginBottom: 16 },
+  label: { fontSize: 13, fontWeight: '600', marginBottom: 8, marginTop: 16 },
+  vehiculosContainer: { maxHeight: 50, marginBottom: 8 },
+  vehiculoTab: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, marginRight: 8, borderWidth: 1 },
+  vehiculoTabText: { fontSize: 13, fontWeight: '600' },
+  vehiculoInfo: { flexDirection: 'row', alignItems: 'center', borderRadius: 10, padding: 10, borderWidth: 1, marginBottom: 4, gap: 8 },
+  vehiculoInfoText: { fontSize: 13 },
+  tiposContainer: { maxHeight: 50, marginBottom: 8 },
+  tipoTab: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, marginRight: 8, borderWidth: 1 },
+  tipoTabText: { fontSize: 13 },
+  inputContainer: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, marginBottom: 4 },
   icon: { marginRight: 8 },
   input: { flex: 1, paddingVertical: 14, fontSize: 15 },
-  kmLabel: { fontSize: 13 },
-  row: { flexDirection: 'row', gap: 12 },
-  rowItem: { flex: 1 },
-  combustibleGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
-  combustibleBtn: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1 },
-  combustibleText: { fontSize: 13, fontWeight: '600' },
-  unidadRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
-  unidadBtn: { flex: 1, borderRadius: 10, padding: 10, alignItems: 'center', borderWidth: 1, flexDirection: 'row', justifyContent: 'center', gap: 6 },
-  unidadText: { fontSize: 13, fontWeight: '600' },
-  conversionText: { fontSize: 12, marginBottom: 12, marginLeft: 4, fontStyle: 'italic' },
-  button: { borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 8 },
+  unidadLabel: { fontSize: 13 },
+  conversionText: { fontSize: 12, marginBottom: 8, marginLeft: 4, fontStyle: 'italic' },
+  inputContainerMulti: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 4 },
+  inputMulti: { fontSize: 15, minHeight: 80, textAlignVertical: 'top' },
+  button: { borderRadius: 10, padding: 16, alignItems: 'center', marginTop: 24, marginBottom: 32 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 });

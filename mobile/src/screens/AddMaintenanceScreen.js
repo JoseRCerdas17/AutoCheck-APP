@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, Alert, ActivityIndicator, ScrollView
+  StyleSheet, Alert, ActivityIndicator, ScrollView,
+  KeyboardAvoidingView, Platform
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -67,10 +68,7 @@ export default function AddMaintenanceScreen({ navigation, route }) {
       Alert.alert('Error', 'El tipo de mantenimiento y el vehículo son obligatorios');
       return;
     }
-
-    // Convertir recorrido a km para guardar en el backend
     const kmGuardar = recorrido ? convertirAKm(recorrido, unidad) : undefined;
-
     setLoading(true);
     try {
       await api.post('/maintenance', {
@@ -93,9 +91,16 @@ export default function AddMaintenanceScreen({ navigation, route }) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <ScrollView contentContainerStyle={styles.inner}>
-
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: theme.background }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
+      <ScrollView
+        contentContainerStyle={styles.inner}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={theme.text} />
           <Text style={[styles.backText, { color: theme.text }]}>Registrar Mantenimiento</Text>
@@ -103,17 +108,14 @@ export default function AddMaintenanceScreen({ navigation, route }) {
 
         {/* Selector de vehículo */}
         <Text style={[styles.label, { color: theme.textSecondary }]}>Vehículo</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.vehiculosContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.vehiculosContainer} keyboardShouldPersistTaps="handled">
           {vehiculos.map((v) => (
             <TouchableOpacity
               key={v.id}
-              style={[
-                styles.vehiculoTab,
-                {
-                  backgroundColor: vehiculoId === v.id ? theme.primary : theme.card,
-                  borderColor: theme.border
-                }
-              ]}
+              style={[styles.vehiculoTab, {
+                backgroundColor: vehiculoId === v.id ? theme.primary : theme.card,
+                borderColor: theme.border
+              }]}
               onPress={() => handleSeleccionarVehiculo(v)}
             >
               <Text style={[styles.vehiculoTabText, { color: vehiculoId === v.id ? '#fff' : theme.text }]}>
@@ -123,7 +125,7 @@ export default function AddMaintenanceScreen({ navigation, route }) {
           ))}
         </ScrollView>
 
-        {/* Info del vehículo seleccionado */}
+        {/* Info del vehículo */}
         {vehiculoSeleccionado && (
           <View style={[styles.vehiculoInfo, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <MaterialIcons name="speed" size={16} color={theme.primary} />
@@ -135,24 +137,19 @@ export default function AddMaintenanceScreen({ navigation, route }) {
           </View>
         )}
 
-        {/* Tipo de mantenimiento */}
+        {/* Tipo */}
         <Text style={[styles.label, { color: theme.textSecondary }]}>Tipo de Mantenimiento *</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tiposContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tiposContainer} keyboardShouldPersistTaps="handled">
           {tiposMantenimiento.map((t) => (
             <TouchableOpacity
               key={t}
-              style={[
-                styles.tipoTab,
-                {
-                  backgroundColor: tipo === t ? theme.primary : theme.card,
-                  borderColor: theme.border
-                }
-              ]}
+              style={[styles.tipoTab, {
+                backgroundColor: tipo === t ? theme.primary : theme.card,
+                borderColor: theme.border
+              }]}
               onPress={() => setTipo(t)}
             >
-              <Text style={[styles.tipoTabText, { color: tipo === t ? '#fff' : theme.text }]}>
-                {t}
-              </Text>
+              <Text style={[styles.tipoTabText, { color: tipo === t ? '#fff' : theme.text }]}>{t}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -170,7 +167,7 @@ export default function AddMaintenanceScreen({ navigation, route }) {
           />
         </View>
 
-        {/* Recorrido en la unidad del vehículo */}
+        {/* Recorrido */}
         <Text style={[styles.label, { color: theme.textSecondary }]}>
           Recorrido al momento del servicio ({unidad})
         </Text>
@@ -238,15 +235,12 @@ export default function AddMaintenanceScreen({ navigation, route }) {
           onPress={handleGuardar}
           disabled={loading}
         >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Guardar Mantenimiento</Text>
-          )}
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Guardar Mantenimiento</Text>}
         </TouchableOpacity>
 
+        <View style={{ height: 32 }} />
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
