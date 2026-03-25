@@ -157,6 +157,7 @@ export default function MaintenanceScreen({ navigation }) {
         <TouchableOpacity onPress={() => setFiltro('llantas')}>
           <Text style={{ marginRight: 10 }}>Llantas</Text>
         </TouchableOpacity>
+
       </View>
 
       {/* TOTAL */}
@@ -188,4 +189,5 @@ const styles = StyleSheet.create({
   cardCosto: { fontSize: 15, fontWeight: 'bold' },
   deleteButton: { flexDirection: 'row', marginTop: 10 },
   deleteText: { marginLeft: 5 }
+  
 });
