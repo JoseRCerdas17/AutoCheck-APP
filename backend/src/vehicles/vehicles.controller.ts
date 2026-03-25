@@ -2,7 +2,6 @@ import { Controller, Get, Post, Delete, Put, Body, Param, UseGuards } from '@nes
 import { VehiclesService } from './vehicles.service';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { JwtAuthGuard } from '../auth/jwt.guard';
-
 @UseGuards(JwtAuthGuard)
 @Controller('vehicles')
 export class VehiclesController {
@@ -23,8 +22,8 @@ export class VehiclesController {
     return this.vehiclesService.remove(+id);
   }
 
-  @Put(':id/kilometraje')
-updateKilometraje(@Param('id') id: string, @Body() body: { kilometraje: number }) {
-  return this.vehiclesService.updateKilometraje(+id, body.kilometraje);
-}
+  @Put(':id')
+  update(@Param('id') id: string, @Body() dto: any) {
+    return this.vehiclesService.update(+id, dto);
+  }
 }

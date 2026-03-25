@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Vehicle } from './vehicle.entity';
@@ -31,9 +31,20 @@ export class VehiclesService {
   }
 
   async updateKilometraje(id: number, kilometraje: number): Promise<Vehicle> {
-  const vehicle = await this.repo.findOne({ where: { id } });
-  if (!vehicle) throw new Error('Vehículo no encontrado');
-  vehicle.kilometraje = kilometraje;
-  return this.repo.save(vehicle);
-}
+    const vehicle = await this.repo.findOne({ where: { id } });
+    if (!vehicle) throw new Error('Vehículo no encontrado');
+    vehicle.kilometraje = kilometraje;
+    return this.repo.save(vehicle);
+  }
+
+  async update(id: number, dto: any): Promise<Vehicle> {
+    await this.repo.update(id, dto);
+    const updatedVehicle = await this.repo.findOne({ where: { id } });
+
+    if (!updatedVehicle) {
+      throw new NotFoundException(`Vehículo con ID ${id} no encontrado`);
+    }
+
+    return updatedVehicle;
+  }
 }
