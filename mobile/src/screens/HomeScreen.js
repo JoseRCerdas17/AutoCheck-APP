@@ -200,7 +200,11 @@ export default function HomeScreen({ navigation }) {
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {vehiculos.map((v) => (
-              <View key={v.id} style={[styles.vehicleCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              <TouchableOpacity
+                key={v.id}
+                style={[styles.vehicleCard, { backgroundColor: theme.card, borderColor: theme.border }]}
+                onPress={() => navigation.navigate('VehicleDetail', { vehiculo: v })}
+              >
                 <View style={[styles.vehicleColorBar, { backgroundColor: getBrandColor(v.marca) }]}>
                   {v.imagen ? (
                     <Image source={{ uri: v.imagen }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
@@ -222,7 +226,7 @@ export default function HomeScreen({ navigation }) {
                   <Ionicons name="trash-outline" size={16} color="#FF5252" />
                   <Text style={[styles.deleteText, { color: '#FF5252' }]}>Eliminar</Text>
                 </TouchableOpacity>
-              </View>
+              </TouchableOpacity>
             ))}
           </ScrollView>
         )}
