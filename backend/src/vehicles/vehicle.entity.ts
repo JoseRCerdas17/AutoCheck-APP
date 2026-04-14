@@ -1,38 +1,36 @@
-
-
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { User } from '../users/user.entity';
 
 @Entity('vehiculos')
 export class Vehicle {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'usuario_id' })
-  usuario: User;
+  usuario!: User;
 
   @Column()
-  marca: string;
+  marca!: string;
 
   @Column()
-  modelo: string;
+  modelo!: string;
 
   @Column({ name: 'anio' })
-  anio: number;
+  anio!: number;
 
   @Column()
-  placa: string;
+  placa!: string;
 
   @Column()
-  combustible: string;
+  combustible!: string;
 
   @Column()
-  kilometraje: number;
+  kilometraje!: number;
 
   @Column({ nullable: true })
-  imagen: string;
+  imagen!: string;
 
   @Column({ default: 'km' })
-  unidad: string;
+  unidad!: string;
 }
