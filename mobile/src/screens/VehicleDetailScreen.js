@@ -6,7 +6,7 @@ import {
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { getBrandColor } from '../theme/carBrands';
-import { formatRecorrido, convertirDeKm } from '../utils/unidades';
+import { formatRecorrido } from '../utils/unidades';
 import api from '../services/api';
 
 export default function VehicleDetailScreen({ navigation, route }) {
@@ -70,6 +70,12 @@ export default function VehicleDetailScreen({ navigation, route }) {
         <View style={[styles.hero, { backgroundColor: getBrandColor(vehiculo.marca) }]}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('EditVehicle', { vehiculo })}
+            style={styles.editBtn}
+          >
+            <Ionicons name="create-outline" size={24} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.heroInitial}>
             {vehiculo.marca ? vehiculo.marca.charAt(0).toUpperCase() : '?'}
@@ -199,6 +205,7 @@ const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   hero: { paddingTop: 60, paddingBottom: 24, alignItems: 'center' },
   backBtn: { position: 'absolute', top: 60, left: 24, padding: 8 },
+  editBtn: { position: 'absolute', top: 60, right: 24, padding: 8 },
   heroInitial: { fontSize: 64, fontWeight: 'bold', color: 'rgba(255,255,255,0.9)', marginBottom: 8 },
   heroNombre: { fontSize: 22, fontWeight: 'bold', color: '#fff' },
   heroSub: { fontSize: 14, color: 'rgba(255,255,255,0.7)', marginTop: 4 },

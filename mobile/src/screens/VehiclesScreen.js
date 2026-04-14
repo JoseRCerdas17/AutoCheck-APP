@@ -113,20 +113,32 @@ export default function VehiclesScreen({ navigation }) {
 
               {/* Botones */}
               <View style={styles.cardButtons}>
-                <TouchableOpacity
-                  style={[styles.historialBtn, { borderColor: theme.primary }]}
-                  onPress={() => navigation.navigate('VehicleDetail', { vehiculo: item })}
-                >
-                  <MaterialIcons name="list-alt" size={16} color={theme.primary} />
-                  <Text style={[styles.historialBtnText, { color: theme.primary }]}>Ver detalle</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.deleteBtn, { borderColor: '#FF5252' }]}
-                  onPress={() => handleEliminar(item.id, `${item.marca} ${item.modelo}`)}
-                >
-                  <Ionicons name="trash-outline" size={16} color="#FF5252" />
-                </TouchableOpacity>
-              </View>
+
+  <TouchableOpacity
+    style={[styles.historialBtn, { borderColor: theme.primary }]}
+    onPress={() => navigation.navigate('VehicleDetail', { vehiculo: item })}
+  >
+    <MaterialIcons name="list-alt" size={16} color={theme.primary} />
+    <Text style={[styles.historialBtnText, { color: theme.primary }]}>
+      Ver detalle
+    </Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    style={[styles.editBtn, { borderColor: theme.primary }]}
+    onPress={() => navigation.navigate('EditVehicle', { vehiculo: item })}
+  >
+    <Ionicons name="create-outline" size={18} color={theme.primary} />
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    style={[styles.deleteBtn, { borderColor: '#FF5252' }]}
+    onPress={() => handleEliminar(item.id, `${item.marca} ${item.modelo}`)}
+  >
+    <Ionicons name="trash-outline" size={18} color="#FF5252" />
+  </TouchableOpacity>
+
+</View>
             </View>
           ))
         )}
@@ -137,6 +149,7 @@ export default function VehiclesScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  
   container: { flex: 1 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingTop: 60, paddingBottom: 16 },
   title: { fontSize: 24, fontWeight: 'bold' },
@@ -154,8 +167,30 @@ const styles = StyleSheet.create({
   cardSubtitle: { fontSize: 14, marginTop: 4 },
   cardKm: { fontSize: 14, marginTop: 4, fontWeight: '600' },
   cardCombustible: { fontSize: 13, marginTop: 2 },
-  cardButtons: { flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 16, gap: 8 },
+  cardButtons: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
   historialBtn: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8, flex: 1, justifyContent: 'center' },
   historialBtnText: { fontSize: 13, fontWeight: '600', marginLeft: 4 },
-  deleteBtn: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8, justifyContent: 'center', alignItems: 'center' },
+  deleteBtn: {
+    flex: 0.3,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 8,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  editBtn: {
+    flex: 0.3,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 6
+  },
 });

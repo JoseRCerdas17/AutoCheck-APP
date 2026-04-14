@@ -43,7 +43,7 @@ export default function KilometrajeModal({ visible, vehiculos, onClose }) {
 
     setLoading(true);
     try {
-      await api.put(`/vehicles/${vehiculoSeleccionado.id}/kilometraje`, {
+      await api.put(`/vehicles/${vehiculoSeleccionado.id}`, {
         kilometraje: kmNuevo,
       });
       Alert.alert(

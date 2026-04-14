@@ -41,4 +41,9 @@ export class VehiclesController {
   updateKilometraje(@Param('id') id: string, @Body() body: { kilometraje: number }) {
     return this.vehiclesService.updateKilometraje(+id, body.kilometraje);
   }
+
+  @Put(':id')
+  update(@Param('id') id: string, @Body() dto: any) {
+    return this.vehiclesService.update(+id, dto);
+  }
 }
