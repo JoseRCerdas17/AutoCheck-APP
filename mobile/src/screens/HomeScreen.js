@@ -18,6 +18,7 @@ export default function HomeScreen({ navigation }) {
   const [alertas, setAlertas] = useState([]);
   const [proximosMantenimientos, setProximosMantenimientos] = useState([]);
   const [showKilometrajeModal, setShowKilometrajeModal] = useState(false);
+  const [alertasNoVistas, setAlertasNoVistas] = useState(0);
   const { theme } = useTheme();
 
   useEffect(() => {
@@ -56,6 +57,10 @@ export default function HomeScreen({ navigation }) {
             return orden[a.nivel] - orden[b.nivel];
           });
           setAlertas(todasAlertas.slice(0, 3));
+
+          const vistas = await AsyncStorage.getItem('alertas_vistas');
+          const noVistas = todasAlertas.length - (parseInt(vistas) || 0);
+          setAlertasNoVistas(Math.max(0, noVistas));
 
           // Próximos mantenimientos del primer vehículo
           if (res.data.length > 0) {
@@ -157,7 +162,12 @@ export default function HomeScreen({ navigation }) {
           <>
             <View style={styles.sectionRow}>
               <Text style={[styles.sectionTitle, { color: theme.text }]}>Alertas</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Alertas')}>
+              <TouchableOpacity onPress={() => navigation.navigate('Alertas')} style={styles.verTodasBtn}>
+                {alertasNoVistas > 0 && (
+                  <View style={styles.alertaBadge}>
+                    <Text style={styles.alertaBadgeText}>{alertasNoVistas}</Text>
+                  </View>
+                )}
                 <Text style={[styles.verTodas, { color: theme.primary }]}>Ver todas →</Text>
               </TouchableOpacity>
             </View>
@@ -322,9 +332,9 @@ export default function HomeScreen({ navigation }) {
           >
             <MaterialIcons name="notifications" size={28} color="#fff" />
             <Text style={styles.quickAccessCardText}>Ver{'\n'}Alertas</Text>
-            {alertas.length > 0 && (
+            {alertasNoVistas > 0 && (
               <View style={styles.quickAccessBadge}>
-                <Text style={styles.quickAccessBadgeText}>{alertas.length}</Text>
+                <Text style={styles.quickAccessBadgeText}>{alertasNoVistas}</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -368,6 +378,9 @@ const styles = StyleSheet.create({
   sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, marginBottom: 12, marginTop: 8 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', paddingHorizontal: 24, marginBottom: 12, marginTop: 8 },
   verTodas: { fontSize: 13, fontWeight: '600' },
+  verTodasBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  alertaBadge: { backgroundColor: '#FF5252', borderRadius: 10, minWidth: 20, height: 20, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 5 },
+  alertaBadgeText: { color: '#fff', fontSize: 11, fontWeight: 'bold' },
   alertaCard: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 24, marginBottom: 8, borderRadius: 12, padding: 14, borderWidth: 1, borderLeftWidth: 4 },
   alertaDot: { width: 8, height: 8, borderRadius: 4, marginRight: 12 },
   alertaInfo: { flex: 1 },

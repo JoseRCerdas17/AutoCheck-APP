@@ -18,7 +18,7 @@ const TIPOS_DOCUMENTO = [
   { id: 'otro', label: 'Otro', icono: 'folder', color: '#607D8B' },
 ];
 
-export default function DocumentsScreen({ navigation }) {
+export default function DocumentsScreen() {
   const { theme } = useTheme();
   const [vehiculos, setVehiculos] = useState([]);
   const [vehiculoSeleccionado, setVehiculoSeleccionado] = useState(null);
@@ -47,12 +47,17 @@ export default function DocumentsScreen({ navigation }) {
 
   const cargarDocumentos = async (vehiculoId) => {
     try {
-      const stored = await AsyncStorage.getItem(`documentos_${vehiculoId}`);
-      if (stored) {
-        setDocumentos(JSON.parse(stored));
-      } else {
-        setDocumentos({});
+      const res = await api.get(`/documents/${vehiculoId}`);
+      const docsMap = {};
+      for (const doc of res.data) {
+        docsMap[doc.type] = {
+          id: doc.id,
+          imagen: doc.fileUrl,
+          fecha: doc.expirationDate || new Date().toLocaleDateString('es-CR'),
+          label: TIPOS_DOCUMENTO.find(t => t.id === doc.type)?.label || doc.type,
+        };
       }
+      setDocumentos(docsMap);
     } catch (error) {
       console.log('Error cargando documentos', error);
     }
@@ -102,7 +107,7 @@ export default function DocumentsScreen({ navigation }) {
         });
       } else {
         result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          mediaTypes: ['images'],
           base64: true,
           quality: 0.7,
         });
@@ -110,20 +115,31 @@ export default function DocumentsScreen({ navigation }) {
 
       if (!result.canceled && result.assets[0]) {
         const imagen = `data:image/jpeg;base64,${result.assets[0].base64}`;
-        const nuevosDocumentos = {
-          ...documentos,
+        const fecha = new Date().toLocaleDateString('es-CR');
+
+        // Si ya existe un documento de este tipo, eliminarlo primero
+        if (documentos[tipo.id]?.id) {
+          await api.delete(`/documents/${documentos[tipo.id].id}`);
+        }
+
+        const res = await api.post('/documents', {
+          type: tipo.id,
+          vehicleId: vehiculoSeleccionado.id,
+          fileUrl: imagen,
+          expirationDate: fecha,
+        });
+
+        setDocumentos(prev => ({
+          ...prev,
           [tipo.id]: {
+            id: res.data.id,
             imagen,
-            fecha: new Date().toLocaleDateString('es-CR'),
+            fecha,
             label: tipo.label,
           }
-        };
-        setDocumentos(nuevosDocumentos);
-        await AsyncStorage.setItem(
-          `documentos_${vehiculoSeleccionado.id}`,
-          JSON.stringify(nuevosDocumentos)
-        );
-        Alert.alert('✅ Guardado', `${tipo.label} guardado correctamente`);
+        }));
+
+        Alert.alert('Guardado', `${tipo.label} guardado correctamente`);
       }
     } catch (error) {
       console.log('Error subiendo imagen', error);
@@ -141,13 +157,16 @@ export default function DocumentsScreen({ navigation }) {
           text: 'Eliminar',
           style: 'destructive',
           onPress: async () => {
-            const nuevosDocumentos = { ...documentos };
-            delete nuevosDocumentos[tipo.id];
-            setDocumentos(nuevosDocumentos);
-            await AsyncStorage.setItem(
-              `documentos_${vehiculoSeleccionado.id}`,
-              JSON.stringify(nuevosDocumentos)
-            );
+            try {
+              await api.delete(`/documents/${documentos[tipo.id].id}`);
+              setDocumentos(prev => {
+                const nuevos = { ...prev };
+                delete nuevos[tipo.id];
+                return nuevos;
+              });
+            } catch (error) {
+              Alert.alert('Error', 'No se pudo eliminar el documento');
+            }
           }
         }
       ]

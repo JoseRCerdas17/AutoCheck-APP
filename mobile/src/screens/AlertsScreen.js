@@ -36,6 +36,7 @@ export default function AlertsScreen({ navigation }) {
       });
 
       setAlertas(todasAlertas);
+      await AsyncStorage.setItem('alertas_vistas', String(todasAlertas.length));
     } catch (error) {
       console.log('Error cargando alertas', error);
     } finally {
