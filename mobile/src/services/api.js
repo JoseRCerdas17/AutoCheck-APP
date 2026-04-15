@@ -15,4 +15,17 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+// Interceptor para manejar errores de autenticación
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      // Token expirado o inválido
+      await AsyncStorage.multiRemove(['token', 'userId']);
+      // Aquí podrías redirigir al login
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;
