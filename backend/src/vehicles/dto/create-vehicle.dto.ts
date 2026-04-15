@@ -7,17 +7,23 @@ export class CreateVehicleDto {
   @IsString()
   modelo: string;
 
+  @IsOptional()
   @IsNumber()
-  anio: number;
+  anio?: number;
 
+  @IsOptional()
   @IsString()
-  placa: string;
+  placa?: string;
 
   @IsString()
   combustible: string;
 
   @IsNumber()
   kilometraje: number;
+
+  @IsOptional()
+  @IsString()
+  unidad?: string;
 
   @IsOptional()
   @IsString()
