@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Not } from 'typeorm';
+import { Repository } from 'typeorm';
+import * as bcrypt from 'bcryptjs';
 import { User } from './user.entity';
 
 @Injectable()
@@ -38,6 +39,30 @@ export class UsersService {
   }
 
 
+
+  async saveResetToken(userId: number, token: string, expiry: Date): Promise<void> {
+    await this.repo.update(userId, { resetToken: token, resetTokenExpiry: expiry });
+  }
+
+  async updatePassword(userId: number, hashedPassword: string): Promise<void> {
+    await this.repo.update(userId, {
+      password: hashedPassword,
+      resetToken: null,
+      resetTokenExpiry: null,
+    });
+  }
+
+  async changePassword(userId: number, currentPassword: string, newPassword: string) {
+    const user = await this.repo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Usuario no encontrado');
+
+    const valid = await bcrypt.compare(currentPassword, user.password);
+    if (!valid) throw new UnauthorizedException('La contraseña actual es incorrecta');
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await this.repo.update(userId, { password: hashed });
+    return { message: 'Contraseña actualizada exitosamente' };
+  }
 
   async savePushToken(userId: number, pushToken: string): Promise<void> {
     await this.repo.update(userId, { pushToken });

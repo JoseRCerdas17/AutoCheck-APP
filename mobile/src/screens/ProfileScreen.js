@@ -155,7 +155,8 @@ setStats({
     <MaterialIcons name="chevron-right" size={24} color={theme.textSecondary} />
   </TouchableOpacity>
 
-  <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card, borderColor: theme.border }]}>
+  <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card, borderColor: theme.border }]}
+    onPress={() => navigation.navigate('ChangePassword')}>
     <View style={styles.menuLeft}>
       <View style={[styles.menuIcon, { backgroundColor: theme.border }]}>
         <Ionicons name="lock-closed-outline" size={20} color={theme.primary} />
