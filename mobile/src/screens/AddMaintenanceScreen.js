@@ -61,6 +61,18 @@ export default function AddMaintenanceScreen({ navigation, route }) {
     setRecorrido('');
   };
 
+  const handleFecha = (texto) => {
+    const soloNumeros = texto.replace(/\D/g, '').slice(0, 8);
+    let formateado = soloNumeros;
+    if (soloNumeros.length > 4) {
+      formateado = soloNumeros.slice(0, 4) + '-' + soloNumeros.slice(4);
+    }
+    if (soloNumeros.length > 6) {
+      formateado = soloNumeros.slice(0, 4) + '-' + soloNumeros.slice(4, 6) + '-' + soloNumeros.slice(6);
+    }
+    setFecha(formateado);
+  };
+
   const unidad = vehiculoSeleccionado?.unidad || 'km';
 
   const handleGuardar = async () => {
@@ -160,10 +172,12 @@ keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
           <MaterialIcons name="calendar-today" size={20} color={theme.textSecondary} style={styles.icon} />
           <TextInput
             style={[styles.input, { color: theme.text }]}
-            placeholder="YYYY-MM-DD (ej. 2026-03-19)"
+            placeholder="YYYY-MM-DD"
             placeholderTextColor={theme.textSecondary}
             value={fecha}
-            onChangeText={setFecha}
+            onChangeText={handleFecha}
+            keyboardType="numeric"
+            maxLength={10}
           />
         </View>
 

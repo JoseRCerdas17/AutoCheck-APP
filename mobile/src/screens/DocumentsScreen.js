@@ -115,7 +115,8 @@ export default function DocumentsScreen() {
 
       if (!result.canceled && result.assets[0]) {
         const imagen = `data:image/jpeg;base64,${result.assets[0].base64}`;
-        const fecha = new Date().toLocaleDateString('es-CR');
+        const hoy = new Date();
+        const fecha = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
 
         // Si ya existe un documento de este tipo, eliminarlo primero
         if (documentos[tipo.id]?.id) {
