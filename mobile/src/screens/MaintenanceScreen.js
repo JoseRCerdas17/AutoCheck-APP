@@ -95,7 +95,11 @@ export default function MaintenanceScreen({ navigation }) {
     return total + parseFloat(m.costo || 0);
   }, 0);
   const renderMantenimiento = ({ item }) => (
-    <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+    <TouchableOpacity
+      style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}
+      onPress={() => navigation.navigate('MaintenanceDetail', { mantenimiento: item, unidad })}
+      activeOpacity={0.8}
+    >
       <View style={styles.cardHeader}>
         <Text style={[styles.cardTipo, { color: theme.primary }]}>{item.tipo}</Text>
         <Text style={[styles.cardCosto, { color: '#4CAF50' }]}>
@@ -140,7 +144,7 @@ export default function MaintenanceScreen({ navigation }) {
   <Ionicons name="trash-outline" size={14} color="#FF5252" />
   <Text style={styles.deleteText}>Eliminar</Text>
 </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
   );
 
   if (loading) {

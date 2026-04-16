@@ -16,6 +16,7 @@ import AlertsScreen from '../screens/AlertsScreen';
 import DocumentsScreen from '../screens/DocumentsScreen';
 import BottomTabs from './BottomTabs';
 import EditVehicleScreen from '../screens/EditVehicleScreen';
+import MaintenanceDetailScreen from '../screens/MaintenanceDetailScreen';
 
 const Stack = createStackNavigator();
 
@@ -41,6 +42,7 @@ export default function AppNavigator() {
         <Stack.Screen name="VehicleDetail" component={VehicleDetailScreen} />
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
 <Stack.Screen name="Documentos" component={DocumentsScreen} />
+        <Stack.Screen name="MaintenanceDetail" component={MaintenanceDetailScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
