@@ -43,6 +43,9 @@ export class VehiclesController {
   }
 
   @Put(':id')
+  @ApiOperation({ summary: 'Actualizar datos de un vehículo' })
+  @ApiResponse({ status: 200, description: 'Vehículo actualizado' })
+  @ApiResponse({ status: 404, description: 'Vehículo no encontrado' })
   update(@Param('id') id: string, @Body() dto: any) {
     return this.vehiclesService.update(+id, dto);
   }
