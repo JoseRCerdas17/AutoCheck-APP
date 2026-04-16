@@ -30,7 +30,7 @@ export default function MaintenanceScreen({ navigation }) {
       const res = await api.get(`/vehicles/${id}`);
       setVehiculos(res.data);
       if (res.data.length > 0) {
-        seleccionarVehiculo(res.data[0]);
+        await seleccionarVehiculo(res.data[0]);
       }
     } catch (error) {
       console.log('Error cargando vehículos', error);

@@ -41,7 +41,6 @@ export default function ChangePasswordScreen({ navigation }) {
     try {
       const userId = await AsyncStorage.getItem('userId');
       await api.put(`/users/change-password/${userId}`, { currentPassword, newPassword });
-
       Alert.alert(
         '¡Contraseña actualizada!',
         'Tu contraseña fue cambiada exitosamente.',
@@ -54,26 +53,6 @@ export default function ChangePasswordScreen({ navigation }) {
       setLoading(false);
     }
   };
-
-  const InputField = ({ label, value, onChange, show, onToggle }) => (
-    <View style={styles.fieldContainer}>
-      <Text style={[styles.label, { color: theme.textSecondary }]}>{label}</Text>
-      <View style={[styles.inputContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
-        <Ionicons name="lock-closed-outline" size={20} color={theme.textSecondary} style={styles.icon} />
-        <TextInput
-          style={[styles.input, { color: theme.text }]}
-          placeholder="••••••••"
-          placeholderTextColor={theme.textSecondary}
-          value={value}
-          onChangeText={onChange}
-          secureTextEntry={!show}
-        />
-        <TouchableOpacity onPress={onToggle}>
-          <Ionicons name={show ? 'eye-off-outline' : 'eye-outline'} size={20} color={theme.textSecondary} />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -88,8 +67,11 @@ export default function ChangePasswordScreen({ navigation }) {
         <View style={{ width: 36 }} />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Ícono */}
         <View style={[styles.iconBox, { backgroundColor: theme.primary + '15' }]}>
           <Ionicons name="lock-closed" size={36} color={theme.primary} />
@@ -99,27 +81,56 @@ export default function ChangePasswordScreen({ navigation }) {
           Ingresá tu contraseña actual y luego la nueva contraseña que querés usar.
         </Text>
 
-        <InputField
-          label="Contraseña actual"
-          value={currentPassword}
-          onChange={setCurrentPassword}
-          show={showCurrent}
-          onToggle={() => setShowCurrent(!showCurrent)}
-        />
-        <InputField
-          label="Nueva contraseña"
-          value={newPassword}
-          onChange={setNewPassword}
-          show={showNew}
-          onToggle={() => setShowNew(!showNew)}
-        />
-        <InputField
-          label="Confirmar nueva contraseña"
-          value={confirmPassword}
-          onChange={setConfirmPassword}
-          show={showConfirm}
-          onToggle={() => setShowConfirm(!showConfirm)}
-        />
+        {/* Contraseña actual */}
+        <Text style={[styles.label, { color: theme.textSecondary }]}>Contraseña actual</Text>
+        <View style={[styles.inputContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <Ionicons name="lock-closed-outline" size={20} color={theme.textSecondary} style={styles.icon} />
+          <TextInput
+            style={[styles.input, { color: theme.text }]}
+            placeholder="••••••••"
+            placeholderTextColor={theme.textSecondary}
+            value={currentPassword}
+            onChangeText={setCurrentPassword}
+            secureTextEntry={!showCurrent}
+          />
+          <TouchableOpacity onPress={() => setShowCurrent(v => !v)}>
+            <Ionicons name={showCurrent ? 'eye-off-outline' : 'eye-outline'} size={20} color={theme.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Nueva contraseña */}
+        <Text style={[styles.label, { color: theme.textSecondary }]}>Nueva contraseña</Text>
+        <View style={[styles.inputContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <Ionicons name="lock-closed-outline" size={20} color={theme.textSecondary} style={styles.icon} />
+          <TextInput
+            style={[styles.input, { color: theme.text }]}
+            placeholder="••••••••"
+            placeholderTextColor={theme.textSecondary}
+            value={newPassword}
+            onChangeText={setNewPassword}
+            secureTextEntry={!showNew}
+          />
+          <TouchableOpacity onPress={() => setShowNew(v => !v)}>
+            <Ionicons name={showNew ? 'eye-off-outline' : 'eye-outline'} size={20} color={theme.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Confirmar contraseña */}
+        <Text style={[styles.label, { color: theme.textSecondary }]}>Confirmar nueva contraseña</Text>
+        <View style={[styles.inputContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <Ionicons name="lock-closed-outline" size={20} color={theme.textSecondary} style={styles.icon} />
+          <TextInput
+            style={[styles.input, { color: theme.text }]}
+            placeholder="••••••••"
+            placeholderTextColor={theme.textSecondary}
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry={!showConfirm}
+          />
+          <TouchableOpacity onPress={() => setShowConfirm(v => !v)}>
+            <Ionicons name={showConfirm ? 'eye-off-outline' : 'eye-outline'} size={20} color={theme.textSecondary} />
+          </TouchableOpacity>
+        </View>
 
         <TouchableOpacity
           style={[styles.button, { backgroundColor: theme.primary }, loading && styles.buttonDisabled]}
@@ -154,11 +165,10 @@ const styles = StyleSheet.create({
     alignSelf: 'center', marginTop: 16, marginBottom: 20,
   },
   description: { fontSize: 14, textAlign: 'center', lineHeight: 22, marginBottom: 32 },
-  fieldContainer: { marginBottom: 20 },
-  label: { fontSize: 13, fontWeight: '600', marginBottom: 8 },
+  label: { fontSize: 13, fontWeight: '600', marginBottom: 8, marginTop: 4 },
   inputContainer: {
     flexDirection: 'row', alignItems: 'center',
-    borderWidth: 1, borderRadius: 12, paddingHorizontal: 12,
+    borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, marginBottom: 20,
   },
   icon: { marginRight: 8 },
   input: { flex: 1, paddingVertical: 14, fontSize: 15 },

@@ -2,10 +2,11 @@ import React, { useState, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, Alert, ActivityIndicator, ScrollView,
-  KeyboardAvoidingView, Platform
+  KeyboardAvoidingView, Platform, Image
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../context/ThemeContext';
 import { convertirAKm } from '../utils/unidades';
 import api from '../services/api';
@@ -22,6 +23,25 @@ export default function AddVehicleScreen({ navigation }) {
   const [combustible, setCombustible] = useState('Gasolina');
   const [unidad, setUnidad] = useState('km');
   const [loading, setLoading] = useState(false);
+  const [imagen, setImagen] = useState(null);
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permiso requerido', 'Necesitamos acceso a tu galería para seleccionar una imagen.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.7,
+      base64: true,
+    });
+    if (!result.canceled && result.assets[0].base64) {
+      setImagen(`data:image/jpeg;base64,${result.assets[0].base64}`);
+    }
+  };
 
   const combustibles = ['Gasolina', 'Diesel', 'Híbrido', 'Eléctrico'];
 
@@ -60,6 +80,7 @@ export default function AddVehicleScreen({ navigation }) {
         kilometraje: kmGuardar,
         combustible,
         unidad,
+        ...(imagen ? { imagen } : {}),
       });
 
       Alert.alert('¡Éxito!', 'Vehículo agregado correctamente', [
@@ -89,6 +110,27 @@ export default function AddVehicleScreen({ navigation }) {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={theme.text} />
           <Text style={[styles.backText, { color: theme.text }]}>Agregar Vehículo</Text>
+        </TouchableOpacity>
+
+        {/* Imagen del vehículo */}
+        <TouchableOpacity style={[styles.imagePicker, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={pickImage}>
+          {imagen ? (
+            <>
+              <Image source={{ uri: imagen }} style={styles.imagePreview} />
+              <View style={styles.imageOverlay}>
+                <Ionicons name="camera" size={22} color="#fff" />
+                <Text style={styles.imageOverlayText}>Cambiar foto</Text>
+              </View>
+            </>
+          ) : (
+            <>
+              <View style={[styles.imageIconBox, { backgroundColor: theme.primary + '18' }]}>
+                <Ionicons name="car-sport-outline" size={36} color={theme.primary} />
+              </View>
+              <Text style={[styles.imagePickerText, { color: theme.textSecondary }]}>Agregar foto del vehículo</Text>
+              <Text style={[styles.imagePickerSub, { color: theme.textSecondary }]}>Opcional</Text>
+            </>
+          )}
         </TouchableOpacity>
 
         {/* Marca */}
@@ -251,4 +293,11 @@ const styles = StyleSheet.create({
   conversionText: { fontSize: 12, marginBottom: 8, marginLeft: 4, fontStyle: 'italic' },
   button: { borderRadius: 10, padding: 16, alignItems: 'center', marginTop: 32, marginBottom: 32 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  imagePicker: { borderRadius: 16, borderWidth: 1, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', marginBottom: 8, overflow: 'hidden', height: 160 },
+  imagePreview: { width: '100%', height: '100%', resizeMode: 'cover' },
+  imageOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.45)', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8, gap: 6 },
+  imageOverlayText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  imageIconBox: { width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
+  imagePickerText: { fontSize: 14, fontWeight: '600', marginBottom: 2 },
+  imagePickerSub: { fontSize: 12 },
 });

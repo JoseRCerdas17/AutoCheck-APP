@@ -185,7 +185,8 @@ setStats({
         {/* Soporte */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Soporte</Text>
-          <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card, borderColor: theme.border }]}
+            onPress={() => navigation.navigate('Help')}>
             <View style={styles.menuLeft}>
               <View style={[styles.menuIcon, { backgroundColor: theme.border }]}>
                 <Ionicons name="help-circle-outline" size={20} color={theme.primary} />
@@ -195,7 +196,8 @@ setStats({
             <MaterialIcons name="chevron-right" size={24} color={theme.textSecondary} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card, borderColor: theme.border }]}
+            onPress={() => navigation.navigate('Terms')}>
             <View style={styles.menuLeft}>
               <View style={[styles.menuIcon, { backgroundColor: theme.border }]}>
                 <Ionicons name="document-text-outline" size={20} color={theme.primary} />
