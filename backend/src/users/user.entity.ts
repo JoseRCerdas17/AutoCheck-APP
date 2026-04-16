@@ -20,11 +20,11 @@ export class User {
   @Column({ nullable: true })
   pushToken: string;
 
-  @Column({ nullable: true })
-  resetToken: string;
+  @Column({ nullable: true, type: 'varchar' })
+  resetToken: string | null;
 
   @Column({ nullable: true, type: 'timestamp' })
-  resetTokenExpiry: Date;
+  resetTokenExpiry: Date | null;
 
   @CreateDateColumn({ name: 'creado_en' })
   creadoEn: Date;
