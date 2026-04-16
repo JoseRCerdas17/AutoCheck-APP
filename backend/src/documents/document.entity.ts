@@ -19,7 +19,7 @@ export class Document {
   @Column({ type: 'date', nullable: true })
   expirationDate!: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   fileUrl!: string;
 
   @CreateDateColumn()

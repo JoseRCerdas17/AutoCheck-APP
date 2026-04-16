@@ -16,19 +16,19 @@ export class Vehicle {
   @Column()
   modelo!: string;
 
-  @Column({ name: 'anio' })
+  @Column({ name: 'anio', nullable: true })
   anio!: number;
 
-  @Column()
+  @Column({ nullable: true })
   placa!: string;
 
-  @Column()
+  @Column({ nullable: true })
   combustible!: string;
 
-  @Column()
+  @Column({ nullable: true })
   kilometraje!: number;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   imagen!: string;
 
   @Column({ default: 'km' })

@@ -38,7 +38,19 @@ export class VehiclesService {
   }
 
   async update(id: number, dto: any): Promise<Vehicle> {
-    await this.repo.update(id, dto);
+    // Mapear 'year' → 'anio' si viene del móvil
+    const datos: any = {};
+    if (dto.marca !== undefined) datos.marca = dto.marca;
+    if (dto.modelo !== undefined) datos.modelo = dto.modelo;
+    if (dto.year !== undefined) datos.anio = dto.year;
+    if (dto.anio !== undefined) datos.anio = dto.anio;
+    if (dto.placa !== undefined) datos.placa = dto.placa;
+    if (dto.combustible !== undefined) datos.combustible = dto.combustible;
+    if (dto.kilometraje !== undefined) datos.kilometraje = dto.kilometraje;
+    if (dto.unidad !== undefined) datos.unidad = dto.unidad;
+    if (dto.imagen !== undefined) datos.imagen = dto.imagen;
+
+    await this.repo.update(id, datos);
     const updatedVehicle = await this.repo.findOne({ where: { id } });
 
     if (!updatedVehicle) {
