@@ -3,10 +3,10 @@ import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, ActivityIndicator
 } from 'react-native';
-import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
-import { generarAlertas } from '../utils/unidades';
+import { generarAlertas, generarAlertasDocumentos } from '../utils/unidades';
 import api from '../services/api';
 
 export default function AlertsScreen({ navigation }) {
@@ -25,9 +25,13 @@ export default function AlertsScreen({ navigation }) {
       let todasAlertas = [];
 
       for (const v of resVehiculos.data) {
-        const resMant = await api.get(`/maintenance/${v.id}`);
+        const [resMant, resDocs] = await Promise.all([
+          api.get(`/maintenance/${v.id}`),
+          api.get(`/documents/${v.id}`),
+        ]);
         const alertasVehiculo = generarAlertas(v, resMant.data);
-        todasAlertas = [...todasAlertas, ...alertasVehiculo];
+        const alertasDocs = generarAlertasDocumentos(v, resDocs.data);
+        todasAlertas = [...todasAlertas, ...alertasVehiculo, ...alertasDocs];
       }
 
       todasAlertas.sort((a, b) => {

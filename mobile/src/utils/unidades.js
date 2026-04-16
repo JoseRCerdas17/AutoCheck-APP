@@ -151,6 +151,55 @@ export const generarAlertas = (vehiculo, mantenimientos) => {
 };
 
 
+// Generar alertas por vencimiento de documentos
+export const generarAlertasDocumentos = (vehiculo, documentos) => {
+  const alertas = [];
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const nombreVehiculo = `${vehiculo.marca} ${vehiculo.modelo}`;
+
+  const etiquetas = {
+    riteve: 'RITEVE',
+    seguro: 'Seguro',
+    marchamo: 'Marchamo',
+    licencia: 'Licencia',
+    factura: 'Factura',
+    otro: 'Documento',
+  };
+
+  for (const doc of documentos) {
+    if (!doc.expirationDate) continue;
+    const fechaVenc = new Date(doc.expirationDate);
+    fechaVenc.setHours(0, 0, 0, 0);
+    const diasRestantes = Math.floor((fechaVenc - hoy) / (1000 * 60 * 60 * 24));
+    const label = etiquetas[doc.type] || doc.type;
+
+    if (diasRestantes < 0) {
+      alertas.push({
+        id: `doc-vencido-${doc.id}`,
+        vehiculo: nombreVehiculo,
+        tipo: `${label} vencido`,
+        mensaje: `Venció hace ${Math.abs(diasRestantes)} día${Math.abs(diasRestantes) !== 1 ? 's' : ''}`,
+        nivel: 'alto',
+        icono: 'description',
+        esDocumento: true,
+      });
+    } else if (diasRestantes <= 30) {
+      alertas.push({
+        id: `doc-proximo-${doc.id}`,
+        vehiculo: nombreVehiculo,
+        tipo: `${label} por vencer`,
+        mensaje: `Vence en ${diasRestantes} día${diasRestantes !== 1 ? 's' : ''} (${fechaVenc.toLocaleDateString('es-CR')})`,
+        nivel: diasRestantes <= 7 ? 'alto' : 'medio',
+        icono: 'description',
+        esDocumento: true,
+      });
+    }
+  }
+
+  return alertas;
+};
+
 // Calcular próximos mantenimientos recomendados
 export const calcularProximosMantenimientos = (vehiculo, mantenimientos) => {
   const unidad = vehiculo.unidad || 'km';

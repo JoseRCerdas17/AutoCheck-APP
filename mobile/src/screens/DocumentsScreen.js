@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Alert, ActivityIndicator, Image
+  Alert, ActivityIndicator, Image, Modal, TextInput, KeyboardAvoidingView, Platform
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -24,6 +24,10 @@ export default function DocumentsScreen() {
   const [vehiculoSeleccionado, setVehiculoSeleccionado] = useState(null);
   const [documentos, setDocumentos] = useState({});
   const [loading, setLoading] = useState(true);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [docPendiente, setDocPendiente] = useState(null); // { tipo, imagen }
+  const [fechaVenc, setFechaVenc] = useState('');
+  const [guardando, setGuardando] = useState(false);
 
   useEffect(() => {
     cargarVehiculos();
@@ -53,7 +57,7 @@ export default function DocumentsScreen() {
         docsMap[doc.type] = {
           id: doc.id,
           imagen: doc.fileUrl,
-          fecha: doc.expirationDate || new Date().toLocaleDateString('es-CR'),
+          fecha: doc.expirationDate || null,
           label: TIPOS_DOCUMENTO.find(t => t.id === doc.type)?.label || doc.type,
         };
       }
@@ -101,50 +105,61 @@ export default function DocumentsScreen() {
           Alert.alert('Permiso denegado', 'Necesitamos acceso a tu cámara');
           return;
         }
-        result = await ImagePicker.launchCameraAsync({
-          base64: true,
-          quality: 0.7,
-        });
+        result = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.7 });
       } else {
-        result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ['images'],
-          base64: true,
-          quality: 0.7,
-        });
+        result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], base64: true, quality: 0.7 });
       }
 
       if (!result.canceled && result.assets[0]) {
         const imagen = `data:image/jpeg;base64,${result.assets[0].base64}`;
-        const hoy = new Date();
-        const fecha = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
-
-        // Si ya existe un documento de este tipo, eliminarlo primero
-        if (documentos[tipo.id]?.id) {
-          await api.delete(`/documents/${documentos[tipo.id].id}`);
-        }
-
-        const res = await api.post('/documents', {
-          type: tipo.id,
-          vehicleId: vehiculoSeleccionado.id,
-          fileUrl: imagen,
-          expirationDate: fecha,
-        });
-
-        setDocumentos(prev => ({
-          ...prev,
-          [tipo.id]: {
-            id: res.data.id,
-            imagen,
-            fecha,
-            label: tipo.label,
-          }
-        }));
-
-        Alert.alert('Guardado', `${tipo.label} guardado correctamente`);
+        setDocPendiente({ tipo, imagen });
+        setFechaVenc('');
+        setModalVisible(true);
       }
     } catch (error) {
-      console.log('Error subiendo imagen', error);
-      Alert.alert('Error', 'No se pudo subir el documento');
+      console.log('Error seleccionando imagen', error);
+      Alert.alert('Error', 'No se pudo seleccionar la imagen');
+    }
+  };
+
+  const handleFechaVenc = (texto) => {
+    const soloNumeros = texto.replace(/\D/g, '').slice(0, 8);
+    let formateado = soloNumeros;
+    if (soloNumeros.length > 4) formateado = soloNumeros.slice(0, 4) + '-' + soloNumeros.slice(4);
+    if (soloNumeros.length > 6) formateado = soloNumeros.slice(0, 4) + '-' + soloNumeros.slice(4, 6) + '-' + soloNumeros.slice(6);
+    setFechaVenc(formateado);
+  };
+
+  const handleGuardarDocumento = async () => {
+    if (!docPendiente) return;
+    if (fechaVenc && fechaVenc.length !== 10) {
+      Alert.alert('Fecha inválida', 'Ingresá la fecha completa en formato YYYY-MM-DD');
+      return;
+    }
+    setGuardando(true);
+    try {
+      const { tipo, imagen } = docPendiente;
+      if (documentos[tipo.id]?.id) {
+        await api.delete(`/documents/${documentos[tipo.id].id}`);
+      }
+      const res = await api.post('/documents', {
+        type: tipo.id,
+        vehicleId: vehiculoSeleccionado.id,
+        fileUrl: imagen,
+        expirationDate: fechaVenc || null,
+      });
+      setDocumentos(prev => ({
+        ...prev,
+        [tipo.id]: { id: res.data.id, imagen, fecha: fechaVenc || null, label: tipo.label },
+      }));
+      setModalVisible(false);
+      setDocPendiente(null);
+      Alert.alert('Guardado', `${tipo.label} guardado correctamente`);
+    } catch (error) {
+      console.log('Error guardando documento', error);
+      Alert.alert('Error', 'No se pudo guardar el documento');
+    } finally {
+      setGuardando(false);
     }
   };
 
@@ -249,7 +264,9 @@ export default function DocumentsScreen() {
                       <View style={[styles.docBadge, { backgroundColor: tipo.color }]}>
                         <Text style={styles.docBadgeText}>{tipo.label}</Text>
                       </View>
-                      <Text style={[styles.docFecha, { color: '#fff' }]}>{doc.fecha}</Text>
+                      <Text style={[styles.docFecha, { color: '#fff' }]}>
+                        {doc.fecha ? `Vence: ${new Date(doc.fecha + 'T00:00:00').toLocaleDateString('es-CR')}` : 'Sin fecha de vencimiento'}
+                      </Text>
                       <View style={styles.docButtons}>
                         <TouchableOpacity
                           style={[styles.docBtn, { backgroundColor: 'rgba(255,255,255,0.2)' }]}
@@ -285,6 +302,57 @@ export default function DocumentsScreen() {
 
         <View style={{ height: 32 }} />
       </ScrollView>
+
+      {/* Modal fecha de vencimiento */}
+      <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={() => setModalVisible(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+          <View style={[styles.modalContainer, { backgroundColor: theme.card }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>
+              {docPendiente?.tipo?.label}
+            </Text>
+            <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
+              ¿Cuándo vence este documento?
+            </Text>
+
+            <View style={[styles.modalInput, { backgroundColor: theme.background, borderColor: theme.border }]}>
+              <MaterialIcons name="calendar-today" size={20} color={theme.textSecondary} style={{ marginRight: 8 }} />
+              <TextInput
+                style={[styles.modalInputText, { color: theme.text }]}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={theme.textSecondary}
+                value={fechaVenc}
+                onChangeText={handleFechaVenc}
+                keyboardType="numeric"
+                maxLength={10}
+                autoFocus
+              />
+            </View>
+
+            <Text style={[styles.modalHint, { color: theme.textSecondary }]}>
+              Ej: 2027-03-15 — se generará una alerta 30 días antes
+            </Text>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: theme.border }]}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={[styles.modalBtnText, { color: theme.text }]}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: theme.primary }]}
+                onPress={handleGuardarDocumento}
+                disabled={guardando}
+              >
+                {guardando
+                  ? <ActivityIndicator color="#fff" size="small" />
+                  : <Text style={[styles.modalBtnText, { color: '#fff' }]}>Guardar</Text>
+                }
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -314,4 +382,14 @@ const styles = StyleSheet.create({
   docIconContainer: { width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
   docLabel: { fontSize: 14, fontWeight: 'bold', marginBottom: 4 },
   docAgregar: { fontSize: 11, textAlign: 'center' },
+  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
+  modalContainer: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 4 },
+  modalSubtitle: { fontSize: 14, marginBottom: 20 },
+  modalInput: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 8 },
+  modalInputText: { flex: 1, fontSize: 16 },
+  modalHint: { fontSize: 12, marginBottom: 24, fontStyle: 'italic' },
+  modalButtons: { flexDirection: 'row', gap: 12 },
+  modalBtn: { flex: 1, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  modalBtnText: { fontSize: 15, fontWeight: '600' },
 });
